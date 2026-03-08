@@ -258,17 +258,18 @@ spec: SPEC-001                        # Reference to source spec
 Start a product discovery session. The agent will:
 
 1. Load current product state and past decisions from `_context/`
-2. Explore the problem space with 2-3 solution approaches
-3. Run an Exa MCP best-practice scan and synthesize actionable guidance
-4. Produce a draft spec in `_context/specs/SPEC-XXX-title.md`
-5. Present the draft for your review
+2. Build a Fact Ledger (Known Facts, Unknowns, Assumptions) before proposing solutions
+3. Run mandatory parallel research tracks (codebase analysis + docs/best practices + external patterns when applicable)
+4. Explore the problem space with 2-3 solution approaches backed by research findings
+5. Produce a draft spec in `_context/specs/SPEC-XXX-title.md`
+6. Present the draft for your review
 
 ```
 /kd-brainstorm
 > "We need batch export — users want to download all analyses at once"
 ```
 
-**Output:** Draft spec with problem statement, proposed solution, technical approach, acceptance criteria, and linked research notes.
+**Output:** Draft spec with problem statement, proposed solution, technical approach, acceptance criteria, source-backed decisions, and linked research notes.
 
 **Next step:** Review the spec. When satisfied, run `/kd-handoff-spec`.
 
