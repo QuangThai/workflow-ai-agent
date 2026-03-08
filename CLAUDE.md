@@ -101,8 +101,9 @@ Rules for fast path:
 ### 1) `/kd-brainstorm`
 - Must read `_context/product-state.md` and related specs/decisions first.
 - Must review `_context/lessons.md` for relevant past mistakes.
-- Must build a **Fact Ledger** (Given Facts → Facts to Look Up → Facts to Derive → Educated Guesses) before proposing solutions.
-- Must dispatch parallel research **subagents** (Track A: technical feasibility, Track B: best practices, Track C: security) to keep main context clean.
+- Must build a **Fact Ledger** (Known Facts → Unknown / Needs Research → Assumptions) before proposing solutions.
+- Must treat research as **mandatory** (never optional), and resolve all critical unknowns before drafting the spec.
+- Must dispatch parallel research **subagents** (Track A: codebase feasibility, Track B: best-practice/docs, Track C: external/competitive patterns when applicable) to keep main context clean.
 - Must produce:
   - Draft spec in `_context/specs/SPEC-XXX-{slug}.md`
   - Research note in `_context/research/YYYY-MM-DD-{topic}.md` (sources + distilled best practices)

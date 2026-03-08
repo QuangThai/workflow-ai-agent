@@ -30,7 +30,7 @@ Workspace/
 ## Skills (Pipeline Stages)
 | Command | Skill | Description |
 |---------|-------|-------------|
-| `/kd-brainstorm` | `kd-brainstorm` | Fact Ledger → parallel research → brainstorm → draft spec |
+| `/kd-brainstorm` | `kd-brainstorm` | Mandatory Fact Ledger → mandatory parallel research → brainstorm → draft spec |
 | `/kd-handoff-spec` | `kd-handoff-spec` | Guardrail validation → phase decomposition → contract handoff |
 | `/kd-dev` | `kd-dev` | Pick up handoff → implement current phase → self-verify |
 | `/kd-qa` | `kd-qa` | Run checks → Progress Ledger → loop detection → route |
