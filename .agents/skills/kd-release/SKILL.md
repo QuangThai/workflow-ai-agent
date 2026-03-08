@@ -10,18 +10,20 @@ Execute the release process for Scopelytics AI.
 ## Workflow
 
 ### Step 1: Pick Up Release Ticket
-1. List `_handoff/queue/` for tickets where `to: release` and `status: pending`
-2. Read the release handoff ticket
-3. Present release summary to user for final approval
+1. Review `_context/lessons.md` for patterns relevant to deployment
+2. List `_handoff/queue/` for tickets where `to: release` and `status: pending`
+3. Read the release handoff ticket
+4. Present release summary to user for final approval
+5. **Fail-fast**: If no pending release tickets are found, STOP and report "No work ready for release." If the spec or QA report is missing, STOP and report.
 
 ### Step 2: Pre-Deploy Checklist
 Verify all gates from PRDs:
 
 **Backend (PRD §12):**
-- [ ] `ruff check --fix src && ruff format src` passes
+- [ ] `ruff check src` passes (no --fix: release must verify, not rewrite)
+- [ ] `ruff format --check src` passes
 - [ ] `mypy src` passes
 - [ ] `pytest` passes with strict markers
-- [ ] Smoke API checks ready
 
 **Frontend (PRD §11):**
 - [ ] `npm run lint` passes
@@ -51,8 +53,8 @@ After user confirms deploy:
 
 ### Step 5: Update Product State
 1. Update `_context/product-state.md`:
-   - Remove from "Active Specs"
-   - Add to release history
+   - Find the line matching the spec ID in "Active Specs" and mark it with strikethrough + `released ✅`
+   - Add a summary line to "Recent Decisions" with the date and outcome
 2. Update spec status: `implemented` → `released`
 3. Archive release handoff to `_handoff/archive/`
 
@@ -61,16 +63,26 @@ Create content handoff in `_handoff/queue/`:
 
 ```markdown
 ---
-id: HO-XXX
+id: HO-{next_id}  # (scan _handoff/queue/ and _handoff/archive/ per ID Allocation rules)
 from: release
 to: content
 priority: {priority}
 status: pending
 created: {ISO timestamp}
 spec: SPEC-XXX
+total_phases: 1
+current_phase: 1
+loop_count: 0
+output_mode: last_message
 ---
 
 # Content: {Feature Title}
+
+## Contract
+- **task_description**: Generate content artifacts (changelog, blog, social, docs) for the shipped feature. Write for the target audience.
+- **acceptance_criteria**: At least changelog entry and one blog/social draft produced. Content is accurate and references actual implementation.
+- **context_keys**: _context/specs/SPEC-XXX-*.md, _context/product-state.md, _context/research/
+- **output_mode**: last_message
 
 ## What Was Shipped
 {User-facing summary}
@@ -108,3 +120,5 @@ spec: SPEC-XXX
 - Always verify health checks post-deploy
 - Always create content handoff for shipped features
 - Always include rollback commands in case of issues
+- **Release must verify, not fix**: All pre-deploy checks must be non-mutating. If checks fail, route back to dev — do not auto-fix during release.
+- **Fail-fast**: If required artifacts are missing, STOP and report rather than guessing.
