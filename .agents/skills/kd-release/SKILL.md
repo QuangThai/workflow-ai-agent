@@ -5,7 +5,7 @@ description: "Execute release process — deploy, verify, and update product sta
 
 # kd-release — Release Agent
 
-Execute the release process for Scopelytics AI.
+Execute the release process for the current project.
 
 ## Workflow
 
@@ -17,39 +17,50 @@ Execute the release process for Scopelytics AI.
 5. **Fail-fast**: If no pending release tickets are found, STOP and report "No work ready for release." If the spec or QA report is missing, STOP and report.
 
 ### Step 2: Pre-Deploy Checklist
-Verify all gates from PRDs:
+Verify all gates from relevant PRDs:
 
-**Backend (PRD §12):**
+**Service A (example):**
 - [ ] `ruff check src` passes (no --fix: release must verify, not rewrite)
 - [ ] `ruff format --check src` passes
 - [ ] `mypy src` passes
 - [ ] `pytest` passes with strict markers
 
-**Frontend (PRD §11):**
+**Service B (example):**
 - [ ] `npm run lint` passes
 - [ ] `npm run build` passes
-- [ ] `npm run check:api-contract` passes
+- [ ] `npm run test` (or contract check) passes
+
+**Release governance checks:**
+- [ ] CI supports merge queue checks (workflow triggers include `merge_group` when required checks are enforced)
+- [ ] Workflow concurrency is configured to avoid stale in-progress runs on the same branch
+- [ ] Reusable workflow contracts (`workflow_call` inputs/secrets) are validated and version-pinned
 
 ### Step 3: Deploy
-Reference the deploy script at `docs/deploy-scopelytics.sh`:
+Reference the deploy script at `docs/deploy-project.sh`:
 ```bash
 # The script handles:
-# 1. Git pull on both repos
-# 2. Backend permissions setup
-# 3. Docker compose up (backend)
-# 4. Docker build + run (frontend)
+# 1. Git pull on project repos
+# 2. Service permissions/setup
+# 3. Build/deploy service A
+# 4. Build/deploy service B
 # 5. Health checks
-bash docs/deploy-scopelytics.sh {branch}
+bash docs/deploy-project.sh {target}
 ```
 
 Present the deploy command to user — **do not auto-execute deploy**.
 
+Progressive delivery policy (recommended):
+- Release behind feature flag(s) for high-risk changes
+- Roll out by cohorts/percentage (for example 1% → 10% → 50% → 100%)
+- Keep a kill switch ready for immediate disable without redeploy
+
 ### Step 4: Post-Deploy Verification
 After user confirms deploy:
-- [ ] Backend health: `curl http://127.0.0.1:8000/health`
-- [ ] Frontend health: `curl http://127.0.0.1:3000`
+- [ ] Service A health: `{health check command}`
+- [ ] Service B health: `{health check command}`
 - [ ] Specific smoke tests from release ticket
-- [ ] Monitor for errors (check docker logs)
+- [ ] Monitor for errors (service logs)
+- [ ] Error budget/SLO gate: if budget is exhausted, pause further rollout and route to reliability work
 
 ### Step 5: Update Product State
 1. Update `_context/product-state.md`:

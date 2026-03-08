@@ -5,7 +5,7 @@ description: "Generate content from shipped features — changelogs, blog posts,
 
 # kd-content — Content Agent
 
-Generate content artifacts from shipped features for Scopelytics AI.
+Generate content artifacts from shipped features for the current project.
 
 ## Workflow
 
@@ -59,7 +59,7 @@ The main agent reviews, edits for consistency, and saves all outputs.
 {What pain point this solves}
 
 ## The Solution
-{How Scopelytics AI now handles this}
+{How the product now handles this}
 
 ## How It Works
 {Brief technical explanation — accessible to target audience}
@@ -126,5 +126,5 @@ _context/content/YYYY-MM-DD-{feature-slug}/
 - Don't over-hype — describe what was actually built
 - Tag all content with `[agent: content]`
 - This is the final stage — ensure everything is archived properly
-- **Drafts only**: Never modify files in `scopelytics-ai-backend/` or `scopelytics-ai-frontend/` directly. If repo changes are needed, create a handoff ticket for dev.
+- **Drafts only**: Never modify files under `apps/` directly from this stage. If repo changes are needed, create a handoff ticket for dev.
 - **Fail-fast**: If required artifacts are missing, STOP and report rather than guessing.

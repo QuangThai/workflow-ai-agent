@@ -1,4 +1,4 @@
-# Scopelytics AI — Agent-Driven Development Pipeline
+# Agent-Driven Development Pipeline (Reusable Template)
 
 > A local-first, file-based workflow system that orchestrates AI agents across the full product lifecycle — from brainstorming to content generation — using shared context and structured handoffs.
 
@@ -10,6 +10,8 @@
 - [Architecture](#architecture)
 - [Pipeline Stages](#pipeline-stages)
 - [Getting Started](#getting-started)
+- [After Clone Customization](#after-clone-customization)
+- [Copy-Paste System Prompt](#copy-paste-system-prompt)
 - [Shared Context Layer](#shared-context-layer)
 - [Handoff System](#handoff-system)
 - [Usage Guide](#usage-guide)
@@ -21,7 +23,7 @@
 
 ## Overview
 
-Scopelytics AI uses a **7-stage agent pipeline** to manage the entire product development lifecycle. Each stage is implemented as an [Amp skill](https://ampcode.com) that reads from a shared context layer and passes structured work items through a file-based handoff queue.
+This workspace uses a **7-stage agent pipeline** to manage the full product development lifecycle. Each stage is implemented as an [Amp skill](https://ampcode.com) that reads from a shared context layer and passes structured work items through a file-based handoff queue.
 
 **Key design principles:**
 
@@ -102,7 +104,7 @@ Scopelytics AI uses a **7-stage agent pipeline** to manage the entire product de
 | --- | ---------------- | ------------------ | ------------------------------------------- | -------------------- | ----------------------------------- |
 | 1   | **Discovery**    | `/kd-brainstorm`   | Research & ideate solutions                 | User idea or problem | Draft spec in `_context/specs/`     |
 | 2   | **Approval**     | `/kd-handoff-spec` | Validate & queue for dev                    | Approved spec        | Handoff ticket in `_handoff/queue/` |
-| 3   | **Development**  | `/kd-dev`          | Implement across backend & frontend         | Handoff ticket       | Code changes + tests                |
+| 3   | **Development**  | `/kd-dev`          | Implement across one or more services       | Handoff ticket       | Code changes + tests                |
 | 4   | **Quality**      | `/kd-qa`           | Run tests, lint, verify acceptance criteria | Completed dev work   | QA report (PASS/FAIL)               |
 | 5   | **Finalization** | `/kd-handoff-dev`  | Prepare release package                     | QA-passed ticket     | Release handoff ticket              |
 | 6   | **Release**      | `/kd-release`      | Deploy & verify production                  | Release ticket       | Live deployment                     |
@@ -116,12 +118,52 @@ Scopelytics AI uses a **7-stage agent pipeline** to manage the entire product de
 ### Prerequisites
 
 - [Amp](https://ampcode.com) installed and configured
-- Workspace with both repos cloned:
+- Required MCP servers installed and configured:
+  - **Ref MCP** (documentation search/read): https://docs.ref.tools/install/index
+  - **Exa MCP** (web + code search): https://exa.ai/docs/reference/exa-mcp
+  - **Context7 MCP** (up-to-date library docs): https://context7.com/docs/installation
+- Workspace with one or more project repos cloned:
   ```
   Workspace/
-  ├── scopelytics-ai-backend/    # FastAPI + PostgreSQL + Redis
-  └── scopelytics-ai-frontend/   # Next.js 16 + React 19
+  └── apps/
+      ├── service-a/             # Example: API/backend
+      └── service-b/             # Example: web/frontend/mobile/worker
   ```
+
+### MCP Quick Config
+
+Use your MCP client config and add this shared `mcpServers` block:
+
+```json
+{
+  "mcpServers": {
+    "Ref": {
+      "type": "http",
+      "url": "https://api.ref.tools/mcp?apiKey=YOUR_REF_API_KEY"
+    },
+    "exa": {
+      "type": "http",
+      "url": "https://mcp.exa.ai/mcp"
+    },
+    "context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "YOUR_CONTEXT7_API_KEY"
+      }
+    }
+  }
+}
+```
+
+Client notes:
+- **Cursor**: add in MCP config (for example `~/.cursor/mcp.json`) or MCP settings UI.
+- **OpenCode**: add the same `mcpServers` block in OpenCode MCP configuration.
+- **Codex**: add the same `mcpServers` block in Codex MCP configuration.
+- **Amp**: add the same `mcpServers` block in Amp MCP configuration.
+
+Notes:
+- For Ref, you can also send the key as header `x-ref-api-key` instead of query param.
+- For Exa, if your setup requires auth, follow Exa docs to pass API key.
 
 ### Quick Start
 
@@ -158,6 +200,95 @@ The agent picks the highest-priority pending ticket and loads the appropriate sk
 /kd-handoff-dev    →  Finalize for release
 /kd-release        →  Deploy to production
 /kd-content        →  Generate content artifacts
+```
+
+---
+
+## After Clone Customization
+
+When someone clones this workflow template, update these items first so it matches your real project:
+
+### 1) Map your repositories to `apps/service-a` and `apps/service-b`
+
+- `apps/service-a` should point to your backend/API repo (or your primary service repo).
+- `apps/service-b` should point to your frontend/web/mobile repo (or your secondary service repo).
+- If you have only one repo, keep `service-a` and note in docs that `service-b` is unused.
+- If you have more than two repos, keep `service-a`/`service-b` as primary examples and document extra repos in `AGENTS.md`.
+
+### 2) Add per-service conventions
+
+For each service repo, create/update:
+- `apps/service-a/AGENTS.md`
+- `apps/service-a/PRD.md`
+- `apps/service-b/AGENTS.md`
+- `apps/service-b/PRD.md`
+
+Include:
+- language/framework conventions
+- architecture boundaries
+- quality gates (lint, typecheck, test)
+- deploy/run commands
+- required env vars
+
+### 3) Update quality gates in skills
+
+Adjust skill expectations to your stack:
+- Python example gates (`ruff`, `mypy`, `pytest`) if service is Python
+- Node/Frontend example gates (`npm run lint/build/test`) if service is JS/TS
+- Replace defaults with your actual commands in service-level docs
+
+### 4) Update deploy docs
+
+- Replace `docs/deploy-project.sh` with your real deploy script and command.
+- Add environment-specific release verification checklist.
+
+### 5) Update product metadata placeholders
+
+Edit `_context/product-state.md`:
+- product name/domain
+- repository naming
+- deploy model
+
+### 6) Validate pipeline wiring
+
+Run a dry sequence with a small sample feature:
+1. `/kd-brainstorm`
+2. `/kd-handoff-spec`
+3. `/kd-dev`
+4. `/kd-qa`
+
+Ensure each stage reads/writes `_context/` and `_handoff/` correctly.
+
+---
+
+## Copy-Paste System Prompt
+
+Use this prompt after cloning to quickly align the agent with your project context:
+
+```text
+You are my workflow orchestrator for this repository.
+
+Project profile:
+- Product name: <YOUR_PRODUCT_NAME>
+- Domain: <WHAT_IT_DOES_IN_ONE_LINE>
+- Backend repo path: apps/service-a
+- Frontend repo path: apps/service-b
+- Tech stack (backend): <e.g., NestJS + Postgres>
+- Tech stack (frontend): <e.g., Next.js 16>
+- Deployment target: <e.g., Vercel + Fly.io>
+
+Execution rules:
+1) Always follow the 7-stage pipeline:
+   /kd-brainstorm -> /kd-handoff-spec -> /kd-dev -> /kd-qa -> /kd-handoff-dev -> /kd-release -> /kd-content
+2) Always read `_context/lessons.md` before starting stage work.
+3) Enforce service-specific quality gates from:
+   - apps/service-a/AGENTS.md and apps/service-a/PRD.md
+   - apps/service-b/AGENTS.md and apps/service-b/PRD.md
+4) Never mark work complete without runnable verification evidence.
+5) Use `_handoff/queue/` + `_handoff/archive/` as the only handoff channel.
+6) Keep changes minimal, reversible, and documented in handoff/spec files.
+
+If required service files are missing, fail fast and report exactly what is missing.
 ```
 
 ---
@@ -299,7 +430,7 @@ Pick up the highest-priority handoff ticket and implement. The agent will:
 
 1. Scan `_handoff/queue/` for pending `to: dev` tickets, sorted by priority
 2. Load the spec, AGENTS.md conventions, and PRD requirements
-3. Implement across backend (FastAPI) and frontend (Next.js) as needed
+3. Implement across the impacted services as needed
 4. Run self-verification: lint, type-check, and relevant tests
 5. Update the handoff ticket with an implementation log
 
@@ -307,15 +438,15 @@ Pick up the highest-priority handoff ticket and implement. The agent will:
 /kd-dev
 ```
 
-**Backend conventions enforced:**
+**Service conventions enforced (example for Python service):**
 
 - Python 3.10+, async/await, full type hints
 - `ruff check && ruff format` + `mypy src` + `pytest`
 
-**Frontend conventions enforced:**
+**Service conventions enforced (example for Node/Web service):**
 
-- TypeScript strict mode, `"use client"` directives
-- `npm run lint` + `npm run build` + `npm run check:api-contract`
+- TypeScript strict mode, framework/client directives as required
+- `npm run lint` + `npm run build` + `npm run test`
 
 **Next step:** Run `/kd-qa` to verify the implementation.
 
@@ -362,7 +493,7 @@ Prepare QA-passed work for release. The agent will:
 
 Deploy to production and verify. The agent will:
 
-1. Run the pre-deploy checklist (all quality gates from both PRDs)
+1. Run the pre-deploy checklist (all quality gates from relevant PRDs)
 2. Present the deploy command for user approval — **never auto-deploys**
 3. Guide post-deploy verification (health checks, smoke tests)
 4. Update product state and archive the release ticket
@@ -372,10 +503,10 @@ Deploy to production and verify. The agent will:
 /kd-release
 ```
 
-**Deploy script reference:** `docs/deploy-scopelytics.sh`
+**Deploy script reference (example):** `docs/deploy-project.sh`
 
 ```bash
-bash docs/deploy-scopelytics.sh develop
+bash docs/deploy-project.sh <environment>
 ```
 
 **Next step:** Run `/kd-content` to generate content.
@@ -405,7 +536,7 @@ _context/content/2026-03-06-batch-export/
 └── docs-update.md
 ```
 
-**Pipeline complete.** 🎉
+**Pipeline complete.**
 
 ---
 
@@ -499,21 +630,15 @@ Workspace/
 │       └── kd-content/              #     Stage 7: Content
 │
 ├── docs/                              # Operational documentation
-│   └── deploy-scopelytics.sh        #   Production deploy script
+│   └── deploy-project.sh            #   Project deploy script (example name)
 │
-├── scopelytics-ai-backend/           # FastAPI backend
-│   ├── src/app/                      #   Application source
-│   ├── tests/                        #   Test suite
-│   ├── alembic/                      #   Database migrations
-│   ├── AGENTS.md                     #   Backend agent conventions
-│   └── PRD.md                        #   Backend requirements
-│
-├── scopelytics-ai-frontend/          # Next.js frontend
-│   ├── app/                          #   App Router pages
-│   ├── components/                   #   UI components
-│   ├── lib/                          #   Utilities & API clients
-│   ├── AGENTS.md                     #   Frontend agent conventions
-│   └── PRD.md                        #   Frontend requirements
+├── apps/                              # One or more code repositories
+│   ├── service-a/                    #   Example: API service
+│   │   ├── AGENTS.md                 #   Service-specific agent conventions
+│   │   └── PRD.md                    #   Service requirements
+│   └── service-b/                    #   Example: web/mobile/worker service
+│       ├── AGENTS.md                 #   Service-specific agent conventions
+│       └── PRD.md                    #   Service requirements
 │
 ├── AGENTS.md                          # Root orchestrator configuration
 └── README.md                          # ← You are here
@@ -523,4 +648,4 @@ Workspace/
 
 ## License
 
-Internal project — Scopelytics AI.
+Adopt and customize for your project.

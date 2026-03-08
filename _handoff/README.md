@@ -50,6 +50,13 @@ total_phases: {N — total implementation phases, default 1 for single-phase wor
 current_phase: {N — which phase this handoff covers, default 1}
 loop_count: {N — QA→dev cycle count, starts at 0}
 output_mode: full_history|last_message
+service_scope: {list of affected services/repos}
+risk_level: low|medium|high
+rollback_plan: {short rollback strategy}
+started_at: YYYY-MM-DDTHH:MM:SSZ (optional)
+qa_started_at: YYYY-MM-DDTHH:MM:SSZ (optional)
+qa_completed_at: YYYY-MM-DDTHH:MM:SSZ (optional)
+released_at: YYYY-MM-DDTHH:MM:SSZ (optional)
 ---
 
 # Title
@@ -68,6 +75,17 @@ What and why.
 ## Acceptance Criteria
 - [ ] How to verify it's done
 
+## Implementation Plan (Phased)
+### Phase 1: {Name}
+- Tasks:
+  - [ ] **1.1** {task}
+  - [ ] **1.2** {task}
+
+### Phase 2: {Name}
+- Tasks:
+  - [ ] **2.1** {task}
+  - [ ] **2.2** {task}
+
 ## References
 - Links to _context/ docs, PRD sections, etc.
 ```
@@ -78,6 +96,8 @@ What and why.
 - Backward handoffs (FAIL routing) MUST include specific, actionable instructions — not just "fix it"
 - Archive completed handoffs immediately to keep the queue clean
 - **Fail-fast on missing inputs**: If a required artifact (spec, ticket, config file) is missing or has malformed frontmatter, STOP immediately. Set ticket `status: blocked`, report the exact missing dependency, and do not guess forward.
+- Track optional lifecycle timestamps when available to compute cycle-time and QA turnaround metrics.
+- For phased work, implementation tasks should use hierarchical numbering (`1.1`, `1.2`, `2.1`, ...).
 
 ## ID Allocation
 To determine the next handoff ID:

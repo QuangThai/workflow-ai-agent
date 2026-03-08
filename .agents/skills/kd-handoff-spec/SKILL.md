@@ -28,6 +28,11 @@ Run automated quality checks before proceeding. If any check fails, return to br
 - [ ] No Open Questions marked as "blocker" or unresolved
 - [ ] Effort estimate is proportional to scope (S: <5 files, M: 5-15 files, L: 15+ files)
 - [ ] Fact Ledger present with no unresolved "Facts to Look Up"
+- [ ] Includes measurable success metric(s) and baseline/target (for example latency, error rate, cycle time)
+- [ ] Includes rollback strategy and risk level (`low|medium|high`)
+- [ ] Includes explicit service scope (which repos/services are touched)
+- [ ] Phase tasks use strict hierarchical numbering (`1.1`, `1.2`, `2.1`, ...)
+- [ ] Every phase task has at least one matching acceptance criterion
 
 **LLM guardrail check:**
 Evaluate the spec against this criterion:
@@ -50,6 +55,12 @@ Each phase must specify:
 - Acceptance criteria (testable per-phase)
 - Dependencies on prior phases
 - Estimated effort (S/M within the phase)
+- Numbered task list using `N.M` format (phase.task)
+
+**Task numbering standard (required):**
+- Phase 1 tasks: `1.1`, `1.2`, ...
+- Phase 2 tasks: `2.1`, `2.2`, ...
+- Do not use generic bullets for implementation tasks in phased plans.
 
 **Single-phase normalization**: For effort S with no complex dependencies, create a single phase:
 - Phase 1: Complete implementation (scope = all files, criteria = all acceptance criteria)
@@ -98,20 +109,25 @@ output_mode: full_history
 
 ### Phase 1: {Phase Name} — {priority}
 - **Scope**: {exact files to modify}
+- **Objective**: {what this phase delivers}
 - **Tasks**:
-  1. {Step-by-step implementation order}
-  2. {Dependencies between steps}
+  - [ ] **1.1** {Step-by-step implementation task}
+  - [ ] **1.2** {Step-by-step implementation task}
 - **Acceptance Criteria**:
-  - [ ] {Testable criterion}
+  - [ ] {Testable criterion mapped to 1.1/1.2}
 - **Depends on**: none
+- **Rollback**: {how to revert this phase}
 
 ### Phase 2: {Phase Name} — {priority}
 - **Scope**: {exact files to modify}
+- **Objective**: {what this phase delivers}
 - **Tasks**:
-  1. {Steps}
+  - [ ] **2.1** {Step-by-step implementation task}
+  - [ ] **2.2** {Step-by-step implementation task}
 - **Acceptance Criteria**:
-  - [ ] {Testable criterion}
+  - [ ] {Testable criterion mapped to 2.1/2.2}
 - **Depends on**: Phase 1
+- **Rollback**: {how to revert this phase}
 
 ## Deliverables
 - [ ] Backend implementation (per phase)
@@ -127,8 +143,8 @@ output_mode: full_history
 ## References
 - Spec: `_context/specs/SPEC-XXX-*.md`
 - Research: `_context/research/YYYY-MM-DD-*.md`
-- PRD: `scopelytics-ai-backend/PRD.md` §{section}
-- PRD: `scopelytics-ai-frontend/PRD.md` §{section}
+- PRD: `apps/service-a/PRD.md` §{section}
+- PRD: `apps/service-b/PRD.md` §{section}
 ```
 
 ### Step 6: Update Product State

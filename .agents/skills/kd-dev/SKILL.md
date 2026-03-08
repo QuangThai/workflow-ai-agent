@@ -5,7 +5,7 @@ description: "Pick up handoff tickets and implement features across backend and 
 
 # kd-dev — Development Agent
 
-Pick up approved handoff tickets and implement features in the Scopelytics AI codebase.
+Pick up approved handoff tickets and implement features in the current project codebase.
 
 ## Workflow
 
@@ -69,53 +69,41 @@ output_mode: full_history
 ### Step 3: Implement
 
 #### Subagent Strategy (optional, for larger changes)
-For changes spanning both backend and frontend, consider spawning 2 parallel Tasks:
-- **Task 1**: Backend impact analysis — scan affected files, check existing tests, identify dependencies
-- **Task 2**: Frontend impact analysis — scan affected components, check API contract alignment
+For changes spanning multiple services, consider spawning 2 parallel Tasks:
+- **Task 1**: Service A impact analysis — scan affected files, check existing tests, identify dependencies
+- **Task 2**: Service B impact analysis — scan affected components/modules, check contract alignment
 
 Each returns a concise summary (max 300 words). The main agent then implements changes directly — subagents are for analysis only, never for writing code.
 
-#### Backend (scopelytics-ai-backend/)
-Follow conventions from `AGENTS.md`:
-- Python 3.10+, async/await, type hints everywhere
-- FastAPI endpoints in `src/app/api/v1/`
-- Pydantic schemas in `src/app/schemas/`
-- SQLAlchemy models in `src/app/models/`
-- Services in `src/app/services/`
-- Alembic migrations if DB changes needed
-- Tests alongside in `tests/`
+#### Service Conventions
+Follow conventions from each service's `AGENTS.md` and `PRD.md`:
+- Identify impacted service paths from handoff `context_keys` (for example: `apps/service-a`, `apps/service-b`)
+- Use the stack conventions defined by that service (language, framework, architecture, test layout)
+- Apply migration/process rules defined by that service for database/API/schema changes
 
-#### Frontend (scopelytics-ai-frontend/)
-Follow conventions from `AGENTS.md`:
-- Next.js 16 App Router, React 19, TypeScript
-- Components in `components/` with `"use client"` directive
-- API clients in `lib/api.ts`
-- Types in `lib/types.ts`
-- Styling with Tailwind + `cn()` utility
-
-**Before writing React code:** Load the `vercel-react-best-practices` skill for performance optimization patterns (memoization, code splitting, data fetching, bundle size). Apply its guidelines to all React/Next.js code in this implementation.
+**If writing React code:** Load the `vercel-react-best-practices` skill for performance optimization patterns (memoization, code splitting, data fetching, bundle size). Apply its guidelines to changed React code.
 
 ### Step 4: Self-Verify
 Run checks before marking done:
 
-**Backend:**
+**Service A (example):**
 ```bash
-cd scopelytics-ai-backend
+cd apps/service-a
 ruff check src && ruff format --check src
 mypy src
 pytest tests/{relevant_test_files} -v
 ```
 
-**Frontend:**
+**Service B (example):**
 ```bash
-cd scopelytics-ai-frontend
+cd apps/service-b
 npm run lint
 npm run build
-npm run check:api-contract
+npm run test
 ```
 
-**Frontend React Check (if React/Next.js files changed):**
-Load the `react-doctor` skill and run its diagnostics against the changed components. Fix any issues it flags before proceeding.
+**React Check (if React files changed):**
+Load the `vercel-react-best-practices` skill and run a focused audit against changed components. Fix any issues it flags before proceeding.
 
 ### Step 5: Elegance Gate
 Before marking done, pause and self-review:

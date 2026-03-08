@@ -36,8 +36,8 @@ Check if this is a multi-phase spec:
 
 ### Step 3: Finalize Documentation
 1. Verify `PRD.md` updates if new endpoints/features were added:
-   - Backend: `scopelytics-ai-backend/PRD.md`
-   - Frontend: `scopelytics-ai-frontend/PRD.md`
+   - Service A: `apps/service-a/PRD.md`
+   - Service B: `apps/service-b/PRD.md`
 2. Verify `AGENTS.md` updates if architecture changed
 3. Update spec status: `approved` → `implemented`
 
@@ -72,10 +72,10 @@ output_mode: last_message
 {One-paragraph summary of what was built}
 
 ## Changes
-### Backend
+### Service A
 - {List of key changes with file paths}
 
-### Frontend
+### Service B
 - {List of key changes with file paths}
 
 ### Database

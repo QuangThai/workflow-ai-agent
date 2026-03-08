@@ -5,7 +5,7 @@ description: "Brainstorm product ideas, research solutions, and draft specs. Use
 
 # kd-brainstorm — Product Discovery & Research
 
-Brainstorm ideas, research solutions, analyze competitors, and produce draft specs for Scopelytics AI.
+Brainstorm ideas, research solutions, analyze competitors, and produce draft specs for the current project.
 
 ## Workflow
 
@@ -17,7 +17,7 @@ Read these files to ground the session in current project state:
 3. `_context/decisions/` — past architecture and product decisions (if any exist)
 4. `_context/research/` — past research notes (check for related prior research to avoid duplication)
 5. `_context/specs/` — scan existing spec filenames to determine the **next SPEC ID** (e.g., if `SPEC-005` exists, next is `SPEC-006`)
-6. Relevant `PRD.md` files (backend/frontend) for requirements alignment
+6. Relevant `PRD.md` files (for impacted services) for requirements alignment
 7. `_handoff/queue/` — any feedback from QA or dev that needs addressing
 
 ### Step 2: Fact Ledger
@@ -64,12 +64,17 @@ Spawn **3 Task calls in a single assistant message** (one per track). This runs 
 3. The Fact Ledger items relevant to that track (copy them in)
 4. This exact output instruction: *"Return ONLY a structured summary (max 500 words). Do not include raw search results, full page contents, or intermediate reasoning. Format: bullet points grouped by finding category."*
 
+**Source quality policy (required):**
+- Tier 1 (preferred): official specifications and official product/framework documentation
+- Tier 2 (secondary): vendor/community articles, engineering blogs
+- Any Tier 2 claim must be corroborated by at least one Tier 1 source before it is treated as "Verified Fact"
+
 #### Track A — Technical Feasibility & Documentation
 Research goal: Can we build this with our current stack?
 
 Tools the subagent should use (in priority order):
 1. `finder` — Check existing codebase for related implementations and patterns
-2. `mcp__ref__ref_search_documentation` — Search official docs (include library name, e.g., "FastAPI dependency injection", "Next.js 16 server actions")
+2. `mcp__ref__ref_search_documentation` — Search official docs (include library name and feature)
 3. `mcp__ref__ref_read_url` — Read full content of relevant doc pages found
 4. `mcp__context7__query_docs` — Secondary source for framework-specific code examples
 
@@ -107,16 +112,17 @@ After all subagents return their summaries (each ≤500 words), the main agent:
 
 Document findings in `_context/research/YYYY-MM-DD-{topic}.md`:
 - Top sources consulted (with links)
-- 5-10 distilled best practices relevant to Scopelytics
+- 5-10 distilled best practices relevant to this project
 - Clear recommendation with trade-offs
 - What was rejected and why (if applicable)
 - Updated Fact Ledger entries
+- Source metadata per key finding: `source_url`, `publish_or_last_updated`, `retrieved_at`, `confidence`
 
 ### Step 4: Brainstorm Solutions
 Based on verified facts and research findings, explore:
 - **Problem definition** — What user pain does this solve? (grounded in Fact Ledger)
 - **Solution options** — At least 2-3 approaches with trade-offs
-- **Technical feasibility** — Validated against current architecture (FastAPI backend, Next.js frontend)
+- **Technical feasibility** — Validated against current project architecture
 - **Scope estimation** — Small / Medium / Large effort (backed by dependency analysis)
 - **Risk assessment** — What could go wrong? (informed by research Track C)
 
@@ -156,15 +162,40 @@ How to solve it.
 ### Frontend Changes
 - Components, routes, API calls affected
 
+## Phase Planning Rules
+- Use numbered phases: `Phase 1`, `Phase 2`, ...
+- Inside each phase, tasks MUST use hierarchical numbering:
+  - Phase 1 tasks: `1.1`, `1.2`, `1.3`, ...
+  - Phase 2 tasks: `2.1`, `2.2`, `2.3`, ...
+- Keep each task atomic and testable in one dev iteration.
+- Every task must map to at least one acceptance criterion.
+- If effort is `M` or `L`, phase breakdown is mandatory.
+
 ## Phases (required for effort ≥ M)
 ### Phase 1: {Name}
-- Scope: {files}
-- Acceptance Criteria: {testable}
+- Objective: {what this phase delivers}
+- Scope: {exact files/services}
+- Tasks:
+  - [ ] **1.1** {atomic task}
+  - [ ] **1.2** {atomic task}
+  - [ ] **1.3** {atomic task}
+- Acceptance Criteria:
+  - [ ] {testable criterion linked to 1.x tasks}
+- Dependencies: none
+- Risks: {known risks in this phase}
+- Rollback: {how to revert this phase safely}
 
 ### Phase 2: {Name}
-- Scope: {files}
-- Acceptance Criteria: {testable}
-- Depends on: Phase 1
+- Objective: {what this phase delivers}
+- Scope: {exact files/services}
+- Tasks:
+  - [ ] **2.1** {atomic task}
+  - [ ] **2.2** {atomic task}
+- Acceptance Criteria:
+  - [ ] {testable criterion linked to 2.x tasks}
+- Dependencies: Phase 1
+- Risks: {known risks in this phase}
+- Rollback: {how to revert this phase safely}
 
 ## Acceptance Criteria
 - [ ] Testable criterion 1
@@ -174,6 +205,13 @@ How to solve it.
 ## Open Questions
 - Things to resolve before dev (mark as "blocker" or "nice-to-have")
 ```
+
+Before presenting the draft, run this **Spec Readiness Check**:
+1. Each phase has clear objective/scope/dependencies.
+2. Tasks are numbered by phase (`1.x`, `2.x`, ...).
+3. Acceptance criteria are testable and mapped to tasks.
+4. Rollback is defined per phase (or explicitly "not needed" with reason).
+5. No blocker open questions remain.
 
 ### Step 6: User Review
 Present the draft to the user for review:

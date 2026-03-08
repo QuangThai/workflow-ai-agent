@@ -18,42 +18,48 @@ Verify completed dev work against specs, run tests, and ensure quality standards
 
 ### Step 2: Automated Checks
 
+Use a two-tier QA gate to improve delivery speed without dropping safety:
+- **Fast Gate (default per dev ticket)**: lint + typecheck + impacted tests + changed-scope contract checks
+- **Full Gate (required before release)**: full regression suites for all impacted services
+
 #### Subagent Strategy (recommended)
-Spawn **2 Task calls in a single message** to run backend and frontend checks in parallel:
-- **Task 1**: Run all backend checks (ruff, mypy, pytest) and return a summary table of results
-- **Task 2**: Run all frontend checks (lint, build, contract) and return a summary table of results
+Spawn **2 Task calls in a single message** to run checks in parallel:
+- **Task 1**: Run checks for service A and return a summary table of results
+- **Task 2**: Run checks for service B and return a summary table of results
 
 Each returns ONLY the results table (max 200 words). The main agent then proceeds to manual review and acceptance criteria.
 
 If not using subagents, run checks sequentially as listed below.
 
-#### Backend Verification
+#### Service A Verification (example)
 ```bash
-cd scopelytics-ai-backend
+cd apps/service-a
 # Lint & format
 ruff check src
 ruff format --check src
 # Type check
 mypy src
-# Full test suite
-pytest -v
-# Security regression (if security-related changes)
-pytest tests/test_guardrails.py tests/test_guardrails_security.py tests/test_prompt_security.py -v
+# Fast Gate: impacted tests
+pytest tests/{changed_or_related_tests} -v
+# Full Gate (required before release): full suite
+# pytest -v
 ```
 
-#### Frontend Verification
+#### Service B Verification (example)
 ```bash
-cd scopelytics-ai-frontend
+cd apps/service-b
 # Lint
 npm run lint
 # Build (includes typecheck)
 npm run build
-# API contract
-npm run check:api-contract
+# Fast Gate: scoped tests/checks
+npm run test -- --changed
+# Full Gate (required before release): full suite
+# npm run test
 ```
 
-#### Frontend React Audit (if React/Next.js files changed)
-Load the `react-doctor` skill and run its full audit against the changed components. Verify performance patterns, hook usage, component structure, and Next.js best practices. Add findings to the QA Report.
+#### React Audit (if React files changed)
+Load the `vercel-react-best-practices` skill and run a focused audit against changed components. Verify performance patterns, hook usage, and component structure. Add findings to the QA Report.
 
 ### Step 3: Manual Review Checklist
 For each changed file, verify:
@@ -89,12 +95,13 @@ Create QA report in the handoff ticket:
 ### Automated Checks
 | Check | Result |
 |-------|--------|
-| Backend lint | ✅/❌ |
-| Backend types | ✅/❌ |
-| Backend tests | ✅/❌ ({pass}/{total}) |
-| Frontend lint | ✅/❌ |
-| Frontend build | ✅/❌ |
-| API contract | ✅/❌ |
+| Gate Mode (Fast/Full) | ✅/❌ |
+| Service A lint | ✅/❌ |
+| Service A types | ✅/❌ |
+| Service A tests | ✅/❌ ({pass}/{total}) |
+| Service B lint | ✅/❌ |
+| Service B build | ✅/❌ |
+| Service B tests/contracts | ✅/❌ |
 
 ### Acceptance Criteria
 | Criterion | Result | Evidence |
@@ -157,7 +164,8 @@ Fill out the progress ledger:
 - Present full QA history and recommend: re-spec, pair debugging, or scope reduction
 
 ## Rules
-- Always run ALL automated checks, not just the ones related to the change
+- Always run all checks required by the selected gate mode
+- Full Gate is mandatory before `/kd-handoff-dev` and `/kd-release`
 - Be thorough but fair — only flag real issues
 - Provide evidence for every fail
 - Update `_context/metrics/` with quality data

@@ -24,3 +24,10 @@
 ## Lessons
 
 <!-- Agents: append new lessons below this line -->
+
+### [2026-03-08] Prefer Reusable Templates Over Project Hardcoding
+- **Context**: User requested making workflow docs reusable across different projects.
+- **Mistake**: Root orchestrator docs and product-state content included hardcoded product/repo/stack names.
+- **Correction**: Replace project-specific naming with neutral placeholders and multi-service patterns.
+- **Rule**: Keep root workflow docs (`AGENTS.md`, `README.md`, `CLAUDE.md`, `_context/product-state.md`) project-agnostic unless explicitly asked to specialize.
+- **Applies to**: all

@@ -183,5 +183,6 @@ output_mode: full_history|last_message
 
 ## Quality Gates
 
-- Backend: `ruff check`, `ruff format --check`, `mypy`, `pytest`
-- Frontend: `npm run lint`, `npm run build`, `npm run check:api-contract`
+- Define quality gates per service/repository in local `AGENTS.md` or `PRD.md`
+- Example Python service: `ruff check`, `ruff format --check`, `mypy`, `pytest`
+- Example Node/Web service: `npm run lint`, `npm run build`, `npm run test`

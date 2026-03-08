@@ -1,4 +1,4 @@
-# AGENTS.md — Scopelytics AI Workspace Orchestrator
+# AGENTS.md — Reusable Workspace Orchestrator
 
 ## Pipeline Overview
 
@@ -22,8 +22,9 @@ Workspace/
 │   └── archive/            # Completed handoffs
 ├── .agents/skills/         # Pipeline skills (kd-*)
 ├── docs/                   # Deploy scripts & operational docs
-├── scopelytics-ai-backend/ # FastAPI backend
-└── scopelytics-ai-frontend/# Next.js frontend
+└── apps/                   # One or more project repositories
+    ├── service-a/          # Example: API service
+    └── service-b/          # Example: web app / worker / mobile app
 ```
 
 ## Skills (Pipeline Stages)
@@ -116,5 +117,6 @@ Bug report → /kd-dev → /kd-qa → /kd-handoff-dev → /kd-release
 4. **Continue work**: "Pick up next task" → I'll find the highest-priority pending ticket
 
 ## Quality Gates
-- Backend: `ruff check`, `ruff format --check`, `mypy`, `pytest`
-- Frontend: `npm run lint`, `npm run build`, `npm run check:api-contract`
+- Define quality gates per repository in each service's local `AGENTS.md` or `PRD.md`
+- Example Python service: `ruff check`, `ruff format --check`, `mypy`, `pytest`
+- Example Node/Frontend service: `npm run lint`, `npm run build`, `npm run test`
