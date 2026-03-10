@@ -20,7 +20,8 @@ Workspace/
 ├── _handoff/               # Inter-agent work queue
 │   ├── queue/              # Pending handoff tickets
 │   └── archive/            # Completed handoffs
-├── .agents/skills/         # Pipeline skills (kd-*)
+├── .agents/skills/         # Pipeline skills (kd-*) — Agent Skills standard (SKILL.md w/ frontmatter)
+├── .cursor/commands/       # Cursor slash commands (kd-*) — plain Markdown, no frontmatter
 ├── docs/                   # Deploy scripts & operational docs
 └── apps/                   # One or more project repositories
     ├── service-a/          # Example: API service
@@ -37,6 +38,12 @@ Workspace/
 | `/kd-handoff-dev` | `kd-handoff-dev` | Finalize → prepare release handoff |
 | `/kd-release` | `kd-release` | Deploy → verify → content handoff |
 | `/kd-content` | `kd-content` | Generate changelog, blog, docs |
+
+## Utility Commands (Cursor Slash Commands)
+| Command | Description |
+|---------|-------------|
+| `/kd-fix` | Bug Fix Fast Path — skip brainstorm/spec, go straight to dev |
+| `/kd-status` | Show pipeline status — scan queue, group by status/agent, flag at-risk tickets |
 
 ## Core Principles
 1. **Fact-first** — Gather and verify facts before brainstorming solutions (Magentic-One Task Ledger pattern)

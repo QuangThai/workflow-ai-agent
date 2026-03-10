@@ -14,6 +14,8 @@ This workspace uses a file-based, local-first pipeline with shared context, stru
 - Work queue: `_handoff/queue/`
 - Handoff contract rules: `_handoff/README.md`
 - Lessons learned: `_context/lessons.md`
+- Agent skills (SKILL.md w/ frontmatter): `.agents/skills/kd-*/`
+- Cursor slash commands (plain Markdown): `.cursor/commands/kd-*.md`
 
 ---
 
@@ -75,13 +77,19 @@ Full pipeline for new features, improvements, and non-trivial changes:
 ### Bug Fix Fast Path
 For bug reports and failing tests — skip brainstorm and spec, go straight to fix:
 ```
-Bug report → /kd-dev → /kd-qa → /kd-handoff-dev → /kd-release
+Bug report → /kd-fix → /kd-qa → /kd-handoff-dev → /kd-release
 ```
 Rules for fast path:
 - Only for clear bugs with reproducible symptoms (failing tests, error logs, user-reported defects).
 - Dev agent creates a minimal handoff ticket directly (no spec required).
 - Must still pass full QA gates — no shortcuts on verification.
 - If the bug reveals a deeper architectural issue, escalate to the full Feature Pipeline.
+
+### Utility Commands
+| Command | Description |
+|---------|-------------|
+| `/kd-fix` | Bug Fix Fast Path — skip brainstorm/spec, go straight to dev |
+| `/kd-status` | Show pipeline status — scan queue, group by status/agent, flag at-risk tickets |
 
 ---
 

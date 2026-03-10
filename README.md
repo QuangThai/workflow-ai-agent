@@ -23,7 +23,7 @@
 
 ## Overview
 
-This workspace uses a **7-stage agent pipeline** to manage the full product development lifecycle. Each stage is implemented as an [Amp skill](https://ampcode.com) that reads from a shared context layer and passes structured work items through a file-based handoff queue.
+This workspace uses a **7-stage agent pipeline** to manage the full product development lifecycle. Each stage is implemented as an [Agent Skill](https://agentskills.io) (`.agents/skills/kd-*/SKILL.md`) with matching [Cursor slash commands](https://cursor.com/docs/agent/chat/commands) (`.cursor/commands/kd-*.md`). Skills read from a shared context layer and pass structured work items through a file-based handoff queue.
 
 **Key design principles:**
 
@@ -31,6 +31,7 @@ This workspace uses a **7-stage agent pipeline** to manage the full product deve
 - **Context-sharing via symlinks** — The `_context/` folder is symlinked between the product decisions repo and the codebase, giving all agents a unified view of product state.
 - **Structured handoffs** — Work moves between agents through markdown files with YAML frontmatter in `_handoff/queue/`, ensuring nothing is lost between sessions.
 - **Human-in-the-loop** — Every critical transition (spec approval, deployment) requires explicit user confirmation.
+- **Cross-agent compatible** — Skills follow the open [Agent Skills standard](https://agentskills.io/specification), working across Amp, Cursor, Claude Code, Codex, and more.
 
 ---
 
@@ -110,6 +111,12 @@ This workspace uses a **7-stage agent pipeline** to manage the full product deve
 | 6   | **Release**      | `/kd-release`      | Deploy & verify production                  | Release ticket       | Live deployment                     |
 | 7   | **Content**      | `/kd-content`      | Generate changelog, blog, docs              | Content ticket       | Content artifacts                   |
 
+### Utility Commands
+
+| Command | Description |
+|---------|-------------|
+| `/kd-fix` | Bug Fix Fast Path — skip brainstorm/spec, go straight to dev |
+| `/kd-status` | Show pipeline status — scan queue, group by status/agent, flag at-risk tickets |
 
 ---
 
@@ -117,7 +124,7 @@ This workspace uses a **7-stage agent pipeline** to manage the full product deve
 
 ### Prerequisites
 
-- [Amp](https://ampcode.com) installed and configured
+- An AI coding agent that supports the [Agent Skills standard](https://agentskills.io) — for example [Amp](https://ampcode.com), [Cursor](https://cursor.com), [Claude Code](https://claude.ai), or [OpenAI Codex](https://openai.com/codex/)
 - Required MCP servers installed and configured:
   - **Ref MCP** (documentation search/read): https://docs.ref.tools/install/index
   - **Exa MCP** (web + code search): https://exa.ai/docs/reference/exa-mcp
@@ -177,10 +184,10 @@ Notes:
 **2. Check what's in the pipeline:**
 
 ```
-> "What's in the queue?"
+/kd-status
 ```
 
-The agent scans `_handoff/queue/` and reports pending work by priority.
+The agent scans `_handoff/queue/` and reports pending work by priority, flags at-risk tickets.
 
 **3. Continue work on the next task:**
 
@@ -190,7 +197,13 @@ The agent scans `_handoff/queue/` and reports pending work by priority.
 
 The agent picks the highest-priority pending ticket and loads the appropriate skill.
 
-**4. Run the full pipeline sequentially:**
+**4. Quick-fix a bug (skip brainstorm/spec):**
+
+```
+/kd-fix Login fails when email contains plus sign
+```
+
+**5. Run the full pipeline sequentially:**
 
 ```
 /kd-brainstorm     →  Draft & approve a spec
@@ -620,7 +633,7 @@ Workspace/
 │   ├── queue/                        #   Active tickets awaiting pickup
 │   └── archive/                      #   Completed tickets (audit trail)
 │
-├── .agents/                           # Amp agent configuration
+├── .agents/                           # Agent Skills (SKILL.md w/ frontmatter)
 │   └── skills/                       #   Pipeline skill definitions
 │       ├── kd-brainstorm/            #     Stage 1: Discovery
 │       ├── kd-handoff-spec/          #     Stage 2: Approval
@@ -629,6 +642,18 @@ Workspace/
 │       ├── kd-handoff-dev/           #     Stage 5: Finalization
 │       ├── kd-release/              #     Stage 6: Release
 │       └── kd-content/              #     Stage 7: Content
+│
+├── .cursor/                           # Cursor slash commands (plain Markdown)
+│   └── commands/                     #   Invoke via /kd-* in Cursor chat
+│       ├── kd-brainstorm.md          #     Trigger kd-brainstorm skill
+│       ├── kd-handoff-spec.md        #     Trigger kd-handoff-spec skill
+│       ├── kd-dev.md                 #     Trigger kd-dev skill
+│       ├── kd-qa.md                  #     Trigger kd-qa skill
+│       ├── kd-handoff-dev.md         #     Trigger kd-handoff-dev skill
+│       ├── kd-release.md             #     Trigger kd-release skill
+│       ├── kd-content.md             #     Trigger kd-content skill
+│       ├── kd-fix.md                 #     Bug Fix Fast Path (utility)
+│       └── kd-status.md              #     Pipeline status dashboard (utility)
 │
 ├── docs/                              # Operational documentation
 │   └── deploy-project.sh            #   Project deploy script (example name)

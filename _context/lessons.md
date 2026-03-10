@@ -23,6 +23,12 @@
 
 ## Lessons
 
+### Use react-doctor and vercel-react-best-practices for frontend work
+- Context: User Profile frontend (ProfileForm, ProfileClient, AppHeader) was implemented without running react-doctor or consulting Vercel React Best Practices.
+- Mistake: Skills were available but not invoked during implementation or QA.
+- Correction: User asked why these skills were not used.
+- Rule: When implementing or reviewing frontend (React/Next.js): (1) Run npx -y react-doctor@latest . --verbose --diff before marking done; (2) Reference vercel-react-best-practices skill for data fetching, rerenders, bundle size, and conditional rendering.
+- Applies to: dev, qa
 <!-- Agents: append new lessons below this line -->
 
 ### [2026-03-08] Prefer Reusable Templates Over Project Hardcoding
