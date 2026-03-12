@@ -22,14 +22,15 @@ Use a two-tier QA gate to improve delivery speed without dropping safety:
 - **Fast Gate (default per dev ticket)**: lint + typecheck + impacted tests + changed-scope contract checks
 - **Full Gate (required before release)**: full regression suites for all impacted services
 
-#### Subagent Strategy (recommended)
-Spawn **2 Task calls in a single message** to run checks in parallel:
-- **Task 1**: Run checks for service A and return a summary table of results
-- **Task 2**: Run checks for service B and return a summary table of results
+#### Subagent Strategy (required)
+**Always** spawn parallel Task calls (one per service) in a **single message** to run all checks concurrently:
+- **Task 1**: Run all checks for service A (lint, typecheck, tests) and return a summary table of results
+- **Task 2**: Run all checks for service B (lint, build, tests) and return a summary table of results
+- Add more Tasks if more services are impacted
 
-Each returns ONLY the results table (max 200 words). The main agent then proceeds to manual review and acceptance criteria.
+Each Task returns ONLY the results table (max 200 words). The main agent then proceeds to manual review and acceptance criteria.
 
-If not using subagents, run checks sequentially as listed below.
+**Do NOT run checks sequentially** — always use parallel subagents for speed.
 
 #### Service A Verification (example)
 ```bash

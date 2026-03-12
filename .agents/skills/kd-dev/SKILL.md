@@ -84,9 +84,15 @@ Follow conventions from each service's `AGENTS.md` and `PRD.md`:
 **If writing React code:** Load the `vercel-react-best-practices` skill for performance optimization patterns (memoization, code splitting, data fetching, bundle size). Apply its guidelines to changed React code.
 
 ### Step 4: Self-Verify
-Run checks before marking done:
+Run checks before marking done. **Always use parallel subagents** — spawn one Task per service in a **single message**:
 
-**Service A (example):**
+- **Task 1**: Run Service A checks (lint, format, typecheck, tests) and return a results summary (max 200 words)
+- **Task 2**: Run Service B checks (lint, build, tests) and return a results summary (max 200 words)
+- Add more Tasks if more services are impacted
+
+**Do NOT run checks sequentially** — always use parallel subagents for speed.
+
+**Service A checks (example):**
 ```bash
 cd apps/service-a
 ruff check src && ruff format --check src
@@ -94,7 +100,7 @@ mypy src
 pytest tests/{relevant_test_files} -v
 ```
 
-**Service B (example):**
+**Service B checks (example):**
 ```bash
 cd apps/service-b
 npm run lint
