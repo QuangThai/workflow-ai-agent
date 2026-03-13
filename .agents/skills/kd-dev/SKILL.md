@@ -155,9 +155,9 @@ As you complete each task, mark it done in the implementation log:
 
 Run checks before marking done. Scale verification to the size of the change:
 
-**Single-service or small fix:** Run checks inline in the main context.
+**One check suite** (e.g., single full-stack app, or small fix): Run checks inline in the main context.
 
-**Multi-service (2+ services changed):** Spawn one Task per changed service in a **single message** so they run concurrently.
+**Two or more check suites** (e.g., separate FE + BE — whether in one monorepo or multiple repos): Spawn one Task per check suite in a **single message** so they run concurrently.
 
 **What to check (dev Fast Gate):**
 

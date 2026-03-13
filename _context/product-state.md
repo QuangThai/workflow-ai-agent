@@ -7,8 +7,8 @@
 - **Name**: <Project Name>
 - **Domain**: <What this product does in one line>
 - **Primary Repositories**:
-  - `apps/service-a` (<API/backend|web|mobile|worker>)
-  - `apps/service-b` (<API/backend|web|mobile|worker>)
+  - `apps/<service-name>` (<API/backend|web|mobile|worker|full-stack>)
+  <!-- Add more repos as needed, or use a single entry for monorepo/full-stack setups -->
 - **Deploy**: <Platform/environment model>
 
 ## Current Focus

@@ -11,7 +11,7 @@
 - [Pipeline Stages](#pipeline-stages)
 - [Getting Started](#getting-started)
 - [After Clone Customization](#after-clone-customization)
-- [Copy-Paste System Prompt](#copy-paste-system-prompt)
+- [How Agents Pick Up Context](#how-agents-pick-up-context)
 - [Shared Context Layer](#shared-context-layer)
 - [Handoff System](#handoff-system)
 - [Usage Guide](#usage-guide)
@@ -133,8 +133,7 @@ This workspace uses a **7-stage agent pipeline** to manage the full product deve
   ```
   Workspace/
   └── apps/
-      ├── service-a/             # Example: API/backend
-      └── service-b/             # Example: web/frontend/mobile/worker
+      └── <your-service>/        # Your repo(s): monorepo, separate FE/BE, or full-stack
   ```
 
 ### MCP Quick Config
@@ -221,25 +220,31 @@ The agent picks the highest-priority pending ticket and loads the appropriate sk
 
 When someone clones this workflow template, update these items first so it matches your real project:
 
-### 1) Map your repositories to `apps/service-a` and `apps/service-b`
+### 1) Map your repositories under `apps/`
 
-- `apps/service-a` should point to your backend/API repo (or your primary service repo).
-- `apps/service-b` should point to your frontend/web/mobile repo (or your secondary service repo).
-- If you have only one repo, keep `service-a` and note in docs that `service-b` is unused.
-- If you have more than two repos, keep `service-a`/`service-b` as primary examples and document extra repos in `AGENTS.md`.
+The `apps/` directory holds one or more project repositories. Adapt to your setup:
+
+| Setup | Example layout | Notes |
+|-------|----------------|-------|
+| **Monorepo (FE + BE)** | `apps/my-app/` | Single repo with both frontend and backend (e.g., Next.js full-stack, or separate `src/api` + `src/web` dirs) |
+| **Separate FE & BE repos** | `apps/api/` + `apps/web/` | Two repos, each with its own conventions and quality gates |
+| **Single framework** | `apps/my-app/` | One repo, one framework (e.g., Next.js handling both FE routes and API routes) |
+| **Multiple services** | `apps/api/` + `apps/web/` + `apps/worker/` | Three or more repos — document extras in `AGENTS.md` |
 
 ### 2) Add per-service conventions
 
-For each service repo, create/update:
-- `apps/service-a/AGENTS.md`
-- `apps/service-a/PRD.md`
-- `apps/service-b/AGENTS.md`
-- `apps/service-b/PRD.md`
+For each service/repo under `apps/`, create:
+- `apps/<service>/AGENTS.md` — agent conventions for that service
+- `apps/<service>/PRD.md` — product requirements
+
+For a **single-repo** setup (monorepo or full-stack framework), create these files in the repo root:
+- `apps/my-app/AGENTS.md`
+- `apps/my-app/PRD.md`
 
 Include:
 - language/framework conventions
 - architecture boundaries
-- quality gates (lint, typecheck, test)
+- quality gates (lint, typecheck, test commands)
 - deploy/run commands
 - required env vars
 
@@ -274,35 +279,18 @@ Ensure each stage reads/writes `_context/` and `_handoff/` correctly.
 
 ---
 
-## Copy-Paste System Prompt
+## How Agents Pick Up Context
 
-Use this prompt after cloning to quickly align the agent with your project context:
+You do **not** need to paste a system prompt — the agent reads context automatically from:
 
-```text
-You are my workflow orchestrator for this repository.
+1. **`AGENTS.md`** (root) — pipeline rules, workspace structure, agent behavior
+2. **`CLAUDE.md`** — stage-by-stage rules, file standards, quality gates
+3. **`_context/product-state.md`** — current product info, active specs, priorities
+4. **`_context/lessons.md`** — cross-session memory (reviewed at session start)
+5. **`apps/<service>/AGENTS.md`** — service-specific conventions, tech stack, quality gates
+6. **`apps/<service>/PRD.md`** — product requirements for that service
 
-Project profile:
-- Product name: <YOUR_PRODUCT_NAME>
-- Domain: <WHAT_IT_DOES_IN_ONE_LINE>
-- Backend repo path: apps/service-a
-- Frontend repo path: apps/service-b
-- Tech stack (backend): <e.g., NestJS + Postgres>
-- Tech stack (frontend): <e.g., Next.js 16>
-- Deployment target: <e.g., Vercel + Fly.io>
-
-Execution rules:
-1) Always follow the 7-stage pipeline:
-   /kd-brainstorm -> /kd-handoff-spec -> /kd-dev -> /kd-qa -> /kd-handoff-dev -> /kd-release -> /kd-content
-2) Always read `_context/lessons.md` before starting stage work.
-3) Enforce service-specific quality gates from:
-   - apps/service-a/AGENTS.md and apps/service-a/PRD.md
-   - apps/service-b/AGENTS.md and apps/service-b/PRD.md
-4) Never mark work complete without runnable verification evidence.
-5) Use `_handoff/queue/` + `_handoff/archive/` as the only handoff channel.
-6) Keep changes minimal, reversible, and documented in handoff/spec files.
-
-If required service files are missing, fail fast and report exactly what is missing.
-```
+After completing the [After Clone Customization](#after-clone-customization) steps, every agent session automatically has full project context. Just run a pipeline command (e.g., `/kd-brainstorm`) and the agent will load what it needs.
 
 ---
 
@@ -654,10 +642,7 @@ Workspace/
 │   └── deploy-project.sh            #   Project deploy script (example name)
 │
 ├── apps/                              # One or more code repositories
-│   ├── service-a/                    #   Example: API service
-│   │   ├── AGENTS.md                 #   Service-specific agent conventions
-│   │   └── PRD.md                    #   Service requirements
-│   └── service-b/                    #   Example: web/mobile/worker service
+│   └── <service>/                    #   Your repo(s): monorepo, FE/BE, or full-stack
 │       ├── AGENTS.md                 #   Service-specific agent conventions
 │       └── PRD.md                    #   Service requirements
 │

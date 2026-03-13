@@ -24,8 +24,7 @@ Workspace/
 ├── .cursor/commands/       # Cursor slash commands (kd-*) — plain Markdown, no frontmatter
 ├── docs/                   # Deploy scripts & operational docs
 └── apps/                   # One or more project repositories
-    ├── service-a/          # Example: API service
-    └── service-b/          # Example: web app / worker / mobile app
+    └── <service>/          # Your repo(s): monorepo, separate FE/BE, or full-stack (e.g., Next.js)
 ```
 
 ## Skills (Pipeline Stages)

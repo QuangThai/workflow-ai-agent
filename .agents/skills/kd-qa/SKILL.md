@@ -22,12 +22,16 @@ Use a two-tier QA gate to improve delivery speed without dropping safety:
 - **Fast Gate (default per dev ticket)**: lint + typecheck + impacted tests + changed-scope contract checks
 - **Full Gate (required before release)**: full regression suites for all impacted services
 
-#### Subagent Strategy (required — no exceptions)
-**Always** spawn parallel Task calls (one per impacted service) in a **single assistant message**. This is non-negotiable for QA speed.
+#### Subagent Strategy
+Scale to the number of **independent check suites**, not the number of repos:
+
+**One check suite** (e.g., a Next.js full-stack app where `npm run lint/build/test` covers everything): Run checks inline in the main context. No subagent needed.
+
+**Two or more check suites** (e.g., separate FE + BE in a monorepo, or separate repos): Spawn parallel Task calls — one per check suite — in a **single assistant message** for speed. This applies whether the suites live in one repo or many.
 
 **How to spawn:**
-1. Identify ALL impacted services from the handoff ticket's scope
-2. Create one Task per service — each Task runs the full check suite for that service
+1. Identify ALL independent check suites from the handoff ticket's scope (e.g., `apps/api` has Python checks, `apps/web` has Node checks — even if they're in the same monorepo)
+2. Create one Task per check suite — each Task runs the full check suite for that area
 3. Include ALL Tasks in a **single message** so they execute concurrently
 4. Each Task must return a structured results table (max 200 words):
 
@@ -41,33 +45,29 @@ Use a two-tier QA gate to improve delivery speed without dropping safety:
 
 **Failure recovery:** If a subagent Task fails (tool error, timeout, crash), retry that specific service's checks inline in the main context. Do not skip checks for any service.
 
-**Never run service checks sequentially in the main context** — always delegate to parallel subagents for speed. The only exception is failure recovery for a single failed subagent.
+#### Verification Commands (adapt to your stack)
 
-#### Service A Verification (example)
+Read the service's `AGENTS.md` or `PRD.md` for the exact quality gate commands. Common patterns:
+
+**Python service example:**
 ```bash
-cd apps/service-a
-# Lint & format
-ruff check src
-ruff format --check src
-# Type check
-mypy src
-# Fast Gate: impacted tests
-pytest tests/{changed_or_related_tests} -v
-# Full Gate (required before release): full suite
-# pytest -v
+ruff check src && ruff format --check src   # Lint & format
+mypy src                                     # Type check
+pytest tests/ -v                             # Tests
 ```
 
-#### Service B Verification (example)
+**Node/TypeScript service example:**
 ```bash
-cd apps/service-b
-# Lint
-npm run lint
-# Build (includes typecheck)
-npm run build
-# Fast Gate: scoped tests/checks
-npm run test -- --changed
-# Full Gate (required before release): full suite
-# npm run test
+npm run lint                                 # Lint
+npm run build                                # Build (includes typecheck)
+npm run test                                 # Tests
+```
+
+**Next.js full-stack example (single repo, both FE + BE):**
+```bash
+npm run lint                                 # Lint
+npm run build                                # Build + typecheck
+npm run test                                 # Tests (unit + integration)
 ```
 
 #### React Audit (if React files changed)
@@ -139,15 +139,11 @@ Create QA report in the handoff ticket:
 - **Phase**: {current_phase} of {total_phases}
 
 ### Automated Checks
-| Check | Result |
-|-------|--------|
-| Gate Mode (Fast/Full) | ✅/❌ |
-| Service A lint | ✅/❌ |
-| Service A types | ✅/❌ |
-| Service A tests | ✅/❌ ({pass}/{total}) |
-| Service B lint | ✅/❌ |
-| Service B build | ✅/❌ |
-| Service B tests/contracts | ✅/❌ |
+| Service | Check | Result |
+|---------|-------|--------|
+| {service/repo name} | Lint | ✅/❌ |
+| {service/repo name} | Types/Build | ✅/❌ |
+| {service/repo name} | Tests | ✅/❌ ({pass}/{total}) |
 
 ### Acceptance Criteria
 | Criterion | Result | Evidence |
