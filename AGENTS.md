@@ -34,7 +34,7 @@ Workspace/
 | `/kd-brainstorm` | `kd-brainstorm` | Mandatory Fact Ledger → mandatory parallel research → brainstorm → draft spec |
 | `/kd-handoff-spec` | `kd-handoff-spec` | Guardrail validation → phase decomposition → contract handoff |
 | `/kd-dev` | `kd-dev` | Pick up handoff → implement current phase → self-verify |
-| `/kd-qa` | `kd-qa` | Run checks → Progress Ledger → loop detection → route |
+| `/kd-qa` | `kd-qa` | Run checks → Progress Ledger → loop detection → route (PASS / PASS-WITH-NOTES / FAIL) |
 | `/kd-handoff-dev` | `kd-handoff-dev` | Finalize → prepare release handoff |
 | `/kd-release` | `kd-release` | Deploy → verify → content handoff |
 | `/kd-content` | `kd-content` | Generate changelog, blog, docs |
@@ -101,7 +101,7 @@ These rules govern how every agent operates, regardless of pipeline stage.
 
 ### Bug Fix Fast Path
 ```
-Bug report → /kd-dev → /kd-qa → /kd-handoff-dev → /kd-release
+Bug report → /kd-fix → /kd-qa → /kd-handoff-dev → /kd-release
 ```
 - Only for clear bugs with reproducible symptoms.
 - Dev agent creates a minimal handoff ticket directly (no spec required).

@@ -22,15 +22,26 @@ Use a two-tier QA gate to improve delivery speed without dropping safety:
 - **Fast Gate (default per dev ticket)**: lint + typecheck + impacted tests + changed-scope contract checks
 - **Full Gate (required before release)**: full regression suites for all impacted services
 
-#### Subagent Strategy (required)
-**Always** spawn parallel Task calls (one per service) in a **single message** to run all checks concurrently:
-- **Task 1**: Run all checks for service A (lint, typecheck, tests) and return a summary table of results
-- **Task 2**: Run all checks for service B (lint, build, tests) and return a summary table of results
-- Add more Tasks if more services are impacted
+#### Subagent Strategy (required — no exceptions)
+**Always** spawn parallel Task calls (one per impacted service) in a **single assistant message**. This is non-negotiable for QA speed.
 
-Each Task returns ONLY the results table (max 200 words). The main agent then proceeds to manual review and acceptance criteria.
+**How to spawn:**
+1. Identify ALL impacted services from the handoff ticket's scope
+2. Create one Task per service — each Task runs the full check suite for that service
+3. Include ALL Tasks in a **single message** so they execute concurrently
+4. Each Task must return a structured results table (max 200 words):
 
-**Do NOT run checks sequentially** — always use parallel subagents for speed.
+```
+| Check | Status | Details |
+|-------|--------|---------|
+| Lint | ✅/❌ | {output summary} |
+| Types | ✅/❌ | {error count if any} |
+| Tests | ✅/❌ | {pass/total, failing test names} |
+```
+
+**Failure recovery:** If a subagent Task fails (tool error, timeout, crash), retry that specific service's checks inline in the main context. Do not skip checks for any service.
+
+**Never run service checks sequentially in the main context** — always delegate to parallel subagents for speed. The only exception is failure recovery for a single failed subagent.
 
 #### Service A Verification (example)
 ```bash
@@ -63,13 +74,47 @@ npm run test -- --changed
 Load the `vercel-react-best-practices` skill and run a focused audit against changed components. Verify performance patterns, hook usage, and component structure. Add findings to the QA Report.
 
 ### Step 3: Manual Review Checklist
-For each changed file, verify:
+Use change-type-driven checklists. Run the **General** checklist always, plus any applicable type-specific checklists.
+
+#### General (always)
 - [ ] Code follows conventions (check `AGENTS.md`)
-- [ ] No hardcoded secrets or credentials
-- [ ] Error handling is appropriate
+- [ ] No hardcoded secrets, credentials, or API keys
+- [ ] No debug code, console.log, TODO/FIXME comments left behind
+- [ ] Error handling is appropriate — no swallowed errors
 - [ ] Types are correct and complete
 - [ ] Tests cover the new functionality
 - [ ] No unnecessary changes outside scope
+- [ ] Implementation log includes acceptance criteria evidence table
+
+#### If API changes
+- [ ] Request validation matches API Contract from spec
+- [ ] Auth/authorization enforced on all protected endpoints
+- [ ] Response shape matches spec (status codes, body structure, error format)
+- [ ] Error responses are consistent and informative
+- [ ] Backward compatibility maintained (or breaking changes documented)
+- [ ] API examples from spec work against actual implementation
+
+#### If DB / Data changes
+- [ ] Migration is safe — can run without downtime
+- [ ] Migration has a working rollback (down migration) or justified as irreversible
+- [ ] Default values and nullability are correct
+- [ ] Indexes added for query patterns
+- [ ] Backfill strategy implemented (if needed for existing data)
+- [ ] Old code can run against new schema during partial deploy
+
+#### If UI changes
+- [ ] All states handled: loading, empty, error, success, unauthorized
+- [ ] Form validation matches spec rules and shows correct error messages
+- [ ] Accessibility: keyboard navigation, ARIA labels, color contrast
+- [ ] Responsive behavior works on mobile/tablet/desktop
+- [ ] Copy/labels match spec content
+- [ ] Analytics events fire correctly (if specified)
+
+#### If Config / Ops changes
+- [ ] New env vars documented with defaults
+- [ ] Feature flags default to safe/off state
+- [ ] Logs and metrics added for observability (if specified in rollout plan)
+- [ ] Smoke tests defined for post-deploy verification
 
 ### Step 4: Acceptance Criteria Verification
 Verify acceptance criteria based on the current phase:
@@ -113,7 +158,17 @@ Create QA report in the handoff ticket:
 {List any issues, or "None"}
 
 ### Notes for Release
-{Anything the release agent should know}
+{Anything relevant for the release verification step}
+
+### Verification Commands Run
+```bash
+{exact commands executed during QA — copy from dev's Implementation Log}
+```
+
+### Gate Mode Evidence
+- Gate mode used: Fast / Full
+- Full Gate completed: yes/no
+- If Fast Gate only: Full Gate required before release
 ```
 
 **Verdict definitions:**
@@ -152,21 +207,23 @@ Fill out the progress ledger:
 **If PASS:**
 - Print: `✅ QA passed. Run /kd-handoff-dev to prepare for release.`
 
-**If FAIL (and loop_count < 3):**
+**If FAIL:**
 - **Reuse the existing ticket** — do NOT create a new one:
-  1. Append the QA Report and Progress Ledger to the existing ticket
-  2. Reset `status: done` → `status: pending` (so dev picks it up again)
-  3. Increment `loop_count` in the frontmatter
-  4. The `instruction_or_question` from the Progress Ledger tells dev exactly what to fix
-- Print: `❌ QA failed (loop {loop_count}). Ticket returned to dev. Run /kd-dev to fix.`
-
-**If FAIL (and loop_count >= 3):**
-- Print: `🚨 QA loop detected ({loop_count} cycles). Escalating to user.`
-- Present full QA history and recommend: re-spec, pair debugging, or scope reduction
+  1. Increment `loop_count` in the frontmatter **first**
+  2. Append the QA Report and Progress Ledger to the existing ticket
+  3. **Check the NEW `loop_count`**:
+     - If `loop_count >= 3`: **STOP and escalate to user immediately**
+       - Print: `🚨 QA loop detected ({loop_count} cycles). Escalating to user.`
+       - Present full QA history and recommend: re-spec, pair debugging, or scope reduction
+       - Set `status: blocked`
+     - If `loop_count < 3`: return ticket to dev
+       - Reset `status: done` → `status: pending`
+       - The `instruction_or_question` from the Progress Ledger tells dev exactly what to fix
+       - Print: `❌ QA failed (loop {loop_count}). Ticket returned to dev. Run /kd-dev to fix.`
 
 ## Rules
 - Always run all checks required by the selected gate mode
-- Full Gate is mandatory before `/kd-handoff-dev` and `/kd-release`
+- Full Gate is mandatory before `/kd-handoff-dev`
 - Be thorough but fair — only flag real issues
 - Provide evidence for every fail
 - Update `_context/metrics/` with quality data

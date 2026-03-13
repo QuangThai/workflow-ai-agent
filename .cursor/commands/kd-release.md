@@ -1,12 +1,14 @@
-Execute the release process for QA-passed, handoff-ready work.
+Verify release status and update product state for shipped work.
 
-1. Load the `kd-release` skill
-2. Follow the skill's full workflow (Step 1 → Step 7)
-3. Pick up release tickets from `_handoff/queue/` where `to: release`
-4. Run pre-deploy checklist — all service checks must pass (non-mutating)
-5. Present deploy command to user — NEVER auto-execute deploy
-6. After user confirms: run post-deploy verification and health checks
-7. Update `_context/product-state.md` and spec status to `released`
-8. Create content handoff for changelog/blog generation
+Load the `kd-release` skill and follow its complete workflow.
+
+This agent does NOT deploy code — deployment happens outside this workflow.
+
+1. Pick up release tickets from `_handoff/queue/` where `to: release`
+2. Ask the user whether the change is live to its intended audience
+3. If not yet deployed: present readiness checklist, STOP, and wait for user to deploy
+4. If live: run post-release verification (health checks, smoke tests)
+5. Update `_context/product-state.md` and spec status to `released`
+6. Create content handoff ticket for changelog/blog generation
 
 Ticket to release: $ARGUMENTS

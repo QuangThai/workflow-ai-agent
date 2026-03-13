@@ -481,7 +481,7 @@ Run comprehensive verification against the completed work. The agent will:
 
 **On PASS:** Move forward with `/kd-handoff-dev`.
 
-**On FAIL:** A feedback ticket is automatically queued back to dev with specific issues. Run `/kd-dev` to address them.
+**On FAIL:** The existing ticket is returned to dev — QA appends its report, increments `loop_count`, and resets `status: pending`. Run `/kd-dev` to address the specific issues in the QA feedback.
 
 ---
 
@@ -505,22 +505,17 @@ Prepare QA-passed work for release. The agent will:
 
 ### Stage 6 — Release (`/kd-release`)
 
-Deploy to production and verify. The agent will:
+Verify release status and update product state. This agent does **NOT** deploy code — deployment happens outside this workflow (CI/CD, manual deploy, `npm publish`, etc.). The agent will:
 
-1. Run the pre-deploy checklist (all quality gates from relevant PRDs)
-2. Present the deploy command for user approval — **never auto-deploys**
-3. Guide post-deploy verification (health checks, smoke tests)
-4. Update product state and archive the release ticket
-5. Create a content handoff ticket for the shipped feature
+1. Pick up release tickets from `_handoff/queue/`
+2. Ask the user whether the change is live to its intended audience
+3. If not yet deployed: present readiness checklist and wait for user to deploy
+4. If live: run post-release verification (health checks, smoke tests)
+5. Update product state and archive the release ticket
+6. Create a content handoff ticket for the shipped feature
 
 ```
 /kd-release
-```
-
-**Deploy script reference (example):** `docs/deploy-project.sh`
-
-```bash
-bash docs/deploy-project.sh <environment>
 ```
 
 **Next step:** Run `/kd-content` to generate content.
@@ -562,7 +557,7 @@ Every feature spec passes through a strict lifecycle, tracked in its YAML frontm
   draft ──────► approved ──────► implemented ──────► released ──────► archived
     │               │                 │                  │                │
     │               │                 │                  │                │
- brainstorm    handoff-spec         dev/qa          release           content
+ brainstorm    handoff-spec       handoff-dev        release           content
  creates it    approves it      code is done     deployed live     content done
 ```
 
@@ -603,9 +598,9 @@ The pipeline includes a built-in feedback loop at the QA stage:
 **QA Failure Flow:**
 
 1. QA agent identifies specific issues with evidence
-2. A feedback handoff ticket is created: `from: qa`, `to: dev`
-3. Dev agent picks up the feedback ticket on the next `/kd-dev` run
-4. Cycle repeats until QA passes
+2. The **existing ticket is reused** — QA appends its report, increments `loop_count`, and resets `status: pending`
+3. Dev agent picks up the same ticket on the next `/kd-dev` run and reads the appended QA feedback
+4. Cycle repeats until QA passes (escalates to user at `loop_count >= 3`)
 
 **Release Rollback Flow:**
 

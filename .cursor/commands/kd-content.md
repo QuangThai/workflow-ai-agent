@@ -1,12 +1,15 @@
-Generate content artifacts from shipped features.
+Generate publication-ready content artifacts from shipped features.
 
-1. Load the `kd-content` skill
-2. Follow the skill's full workflow (Step 1 → Step 5)
-3. Pick up content tickets from `_handoff/queue/` where `to: content`
-4. Load context from spec, product-state, and research notes
-5. Generate: changelog entry, blog draft, social post, technical post (if applicable)
+Load the `kd-content` skill and follow its complete workflow.
+
+1. Pick up content tickets from `_handoff/queue/` where `to: content` and `status: pending`
+2. Gather release evidence: spec, QA report, release ticket, product state
+3. Build a Release Brief as the single source of truth
+4. Generate artifacts based on `announcement_scope`: changelog, release notes, social posts, blog, etc.
+5. Run content quality review and score each artifact
 6. Save all drafts to `_context/content/YYYY-MM-DD-{slug}/`
-7. Archive ticket and update spec status to `archived`
-8. IMPORTANT: Content agent generates drafts ONLY — never modify files under `apps/`
+7. Archive ticket, update spec status to `archived`
+
+Content agent generates drafts ONLY — never modify files under `apps/`.
 
 Ticket to generate content for: $ARGUMENTS

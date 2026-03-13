@@ -1,47 +1,42 @@
 ---
 name: kd-handoff-spec
-description: "Convert approved brainstorm specs into dev-ready handoff tickets. Use after brainstorm approval to queue work for dev agents. Triggers on: handoff spec, approve spec, queue for dev."
+description: "Convert brainstorm specs into dev-ready handoff tickets with phased implementation plans. Use after brainstorm produces a draft spec and the user approves it. Triggers on: handoff spec, approve spec, queue for dev, spec to dev, create handoff, spec ready."
 ---
 
 # kd-handoff-spec — Spec → Dev Handoff
 
-Convert approved specs from brainstorm into actionable dev handoff tickets.
+The bridge between brainstorm and dev. This skill validates a draft spec, decomposes it into implementation phases, and creates a structured handoff ticket that dev agents can pick up without asking clarifying questions.
+
+Why this step matters: ambiguity that passes through here becomes dev churn and QA loops downstream. Every hour spent validating the spec saves multiple hours of rework later.
+
+---
 
 ## Workflow
 
 ### Step 1: Validate Spec
+
 1. Review `_context/lessons.md` for patterns relevant to spec validation
-2. Read the approved spec from `_context/specs/SPEC-XXX-*.md`
-3. Verify it has: Problem, Solution, Technical Approach, Acceptance Criteria
-4. Scan `_handoff/queue/` and `_handoff/archive/` filenames to determine the next HO-ID (see `_handoff/README.md` § ID Allocation)
-5. If incomplete, list what's missing and ask user to resolve
-6. **Fail-fast**: If the spec is missing, has no Problem section, or has `status` other than `draft`, STOP and report the issue. Do not proceed with an invalid spec.
+2. Read the candidate spec from `_context/specs/SPEC-XXX-*.md`
+3. Confirm the spec has `status: draft` — this skill validates drafts and promotes them to `approved`
+4. Verify it has the essential sections: Problem, Solution/Proposed Solution, Technical Approach, Acceptance Criteria
+5. Scan `_handoff/queue/` and `_handoff/archive/` filenames to determine the next HO-ID (see `_handoff/README.md` § ID Allocation)
+6. If incomplete, list what's missing and ask the user to resolve
+
+**Fail-fast**: If the spec file is missing, has no Problem section, or has `status` other than `draft`, STOP and report the issue. A spec that's already `approved` or `implemented` doesn't need this step — it's already been through the gate.
 
 ### Step 2: Guardrail Validation
-Run automated quality checks before proceeding. If any check fails, return to brainstorm with specific issues. Max retries: 3.
 
-**Programmatic checks:**
-- [ ] Has Problem section (≥50 words, describes user pain)
-- [ ] Has Technical Approach with Backend AND/OR Frontend subsections
-- [ ] Has ≥3 Acceptance Criteria (testable, specific, measurable)
-- [ ] Has Phase breakdown (required if effort ≥ M)
-- [ ] No Open Questions marked as "blocker" or unresolved
-- [ ] Effort estimate is proportional to scope (S: <5 files, M: 5-15 files, L: 15+ files)
-- [ ] Fact Ledger present with no unresolved "Facts to Look Up"
-- [ ] Includes measurable success metric(s) and baseline/target (for example latency, error rate, cycle time)
-- [ ] Includes rollback strategy and risk level (`low|medium|high`)
-- [ ] Includes explicit service scope (which repos/services are touched)
-- [ ] Phase tasks use strict hierarchical numbering (`1.1`, `1.2`, `2.1`, ...)
-- [ ] Every phase task has at least one matching acceptance criterion
+Run quality checks before proceeding. The goal is to ensure the spec is actionable for dev, testable for QA, and operationally complete for release.
 
-**LLM guardrail check:**
-Evaluate the spec against this criterion:
-> "Is this spec actionable for a developer with NO prior context? Reject if it contains ambiguous requirements like 'improve performance' without specific metrics, or 'refactor' without listing target files."
+Read `references/guardrail-checklist.md` and evaluate the spec against every applicable check. Skip conditional sections that don't apply (e.g., skip the API Contract check if there are no API changes).
 
-**If guardrail fails:** Return specific failure reasons. Do not proceed until resolved.
+**If any check fails:** Return specific failure reasons with the exact missing information. Do not proceed until resolved. Do NOT "invent certainty" — if phase decomposition would require guessing because the spec is vague, fail back to brainstorm rather than silently converting ambiguity into tasks.
+
+**If the user pushes back on a guardrail:** Use judgment. Some specs (effort S, low risk, single service) genuinely don't need every section. The three semantic questions at the bottom of the checklist are the real bar — if a developer could implement, QA could test, and release could ship without guessing, the spec is ready.
 
 ### Step 3: Phase Decomposition
-Break the spec into implementation phases. This is **required** for effort ≥ M, recommended for effort S.
+
+Break the spec into implementation phases. Required for effort ≥ M, recommended for effort S.
 
 Decompose based on:
 1. **Dependency order** — Phase N must not depend on Phase N+1
@@ -57,111 +52,50 @@ Each phase must specify:
 - Estimated effort (S/M within the phase)
 - Numbered task list using `N.M` format (phase.task)
 
-**Task numbering standard (required):**
-- Phase 1 tasks: `1.1`, `1.2`, ...
-- Phase 2 tasks: `2.1`, `2.2`, ...
-- Do not use generic bullets for implementation tasks in phased plans.
+**Task numbering**: Phase 1 tasks are `1.1`, `1.2`, etc. Phase 2 tasks are `2.1`, `2.2`, etc. This consistency matters because dev and QA agents reference tasks by these IDs.
 
-**Single-phase normalization**: For effort S with no complex dependencies, create a single phase:
-- Phase 1: Complete implementation (scope = all files, criteria = all acceptance criteria)
-- This ensures downstream agents always have `current_phase` and per-phase criteria to work with.
+**Single-phase normalization**: Even S-sized work gets a Phase 1 so downstream agents can always rely on `current_phase` and per-phase criteria.
 
-**Persist phases to spec**: After decomposition, update the spec file in `_context/specs/` with the finalized phase breakdown. The spec is the durable source of truth; the handoff ticket references it. If phases change during dev/QA, the spec must be updated too.
+**Persist phases to spec**: After decomposition, update the spec file in `_context/specs/` with the finalized phase breakdown. The spec is the durable source of truth; the handoff ticket references it.
 
 ### Step 4: Update Spec Status
+
 Edit the spec file — change `status: draft` → `status: approved`
 
 ### Step 5: Create Handoff Ticket
-Create a handoff file in `_handoff/queue/`:
 
-```markdown
----
-id: HO-{next_id}  # (determined in Step 1)
-from: brainstorm
-to: dev
-priority: {from spec}
-status: pending
-created: {ISO timestamp}
-spec: SPEC-XXX
-total_phases: {N}  # {N — minimum 1, even for single-phase work}
-current_phase: 1
-loop_count: 0
-output_mode: full_history
----
+Create a handoff file in `_handoff/queue/` following `_handoff/README.md` naming convention (`HO-{NNN}-{from}-to-{to}-{slug}.md`).
 
-# {Spec Title}
+Read `references/dev-ticket-template.md` for the full template. Key points:
 
-## Contract
-- **task_description**: {What the dev agent should do — full context, no ambiguity}
-- **acceptance_criteria**: {What "done" looks like — copied from spec, refined for testability}
-- **context_keys**: {Which `_context/` artifacts to read — specs, research, decisions}
-- **output_mode**: full_history
-
-## Context
-{Brief summary of the problem and approved solution}
-
-## Scope
-- **Backend**: {list affected areas — endpoints, models, services, migrations}
-- **Frontend**: {list affected areas — components, routes, hooks, API calls}
-- **Shared**: {any _context updates needed}
-
-## Implementation Plan (Phased)
-
-### Phase 1: {Phase Name} — {priority}
-- **Scope**: {exact files to modify}
-- **Objective**: {what this phase delivers}
-- **Tasks**:
-  - [ ] **1.1** {Step-by-step implementation task}
-  - [ ] **1.2** {Step-by-step implementation task}
-- **Acceptance Criteria**:
-  - [ ] {Testable criterion mapped to 1.1/1.2}
-- **Depends on**: none
-- **Rollback**: {how to revert this phase}
-
-### Phase 2: {Phase Name} — {priority}
-- **Scope**: {exact files to modify}
-- **Objective**: {what this phase delivers}
-- **Tasks**:
-  - [ ] **2.1** {Step-by-step implementation task}
-  - [ ] **2.2** {Step-by-step implementation task}
-- **Acceptance Criteria**:
-  - [ ] {Testable criterion mapped to 2.1/2.2}
-- **Depends on**: Phase 1
-- **Rollback**: {how to revert this phase}
-
-## Deliverables
-- [ ] Backend implementation (per phase)
-- [ ] Frontend implementation (per phase)
-- [ ] Tests (unit + integration, per phase)
-- [ ] PRD.md updates if new endpoints/features
-
-## Dev Notes
-- Relevant files: {list key files to modify}
-- Related tests: {list test files}
-- Migration needed: {yes/no}
-
-## References
-- Spec: `_context/specs/SPEC-XXX-*.md`
-- Research: `_context/research/YYYY-MM-DD-*.md`
-- PRD: `apps/service-a/PRD.md` §{section}
-- PRD: `apps/service-b/PRD.md` §{section}
-```
+- The **Contract** section scopes to the **current phase** (Phase 1), not the entire spec. Dev agents are phase-aware and treat the Contract as their primary instruction set.
+- Include `service_scope`, `risk_level`, and `rollback_plan` in frontmatter (these help downstream agents).
+- Group scope by affected service/repo rather than hardcoded "Service A / Service B" labels.
+- Reference the spec for full context; the ticket is a focused action plan, not a spec copy.
 
 ### Step 6: Update Product State
+
 Append to `_context/product-state.md`:
 - Add spec to "Active Specs" section
 - Add decision summary to "Recent Decisions" section
 
 ### Step 7: Notify
-Print summary:
+
 ```
 ✅ Handoff created: _handoff/queue/{filename}
 📋 Spec: _context/specs/SPEC-XXX-*.md (approved)
 🎯 Priority: {priority}
+📦 Phases: {total_phases}
 ⏭️ Next: Run /kd-dev to start implementation
 ```
 
+---
+
 ## Rules
-- Never create handoff without an approved spec
-- Always include file paths for dev to modify
-- Always reference PRD sections
+
+- Validate drafts, then approve — never create a handoff from an unvalidated spec
+- Block ambiguity here rather than passing it to dev/QA — this is the last quality gate before code gets written
+- Scope the handoff Contract to the current phase's acceptance criteria, with the full spec linked in references
+- Follow `_handoff/README.md` for IDs, filenames, and required frontmatter fields
+- Keep the ticket project-agnostic — group by affected repos/services, don't hardcode service names
+- **Write to `_context/lessons.md`** when: (a) repeated validation failures expose a missing spec pattern, (b) a guardrail check consistently catches the same gap, or (c) the user corrects an assumption about the approval process

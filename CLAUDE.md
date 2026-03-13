@@ -136,7 +136,8 @@ Rules for fast path:
 - Runs required checks (lint/types/tests/contracts).
 - Verifies acceptance criteria with evidence (per-phase criteria).
 - Fills out **Progress Ledger** (is_satisfied, is_in_loop, is_progress_being_made, loop_count).
-- Routes PASS forward or FAIL back to dev with **concrete, actionable instructions**.
+- Routes PASS / PASS-WITH-NOTES forward or FAIL back to dev with **concrete, actionable instructions**.
+- On FAIL: increments `loop_count` first, then checks — escalates to user at `loop_count >= 3`.
 - **Loop detection**: Escalates to user at `loop_count >= 3`.
 
 ### 5) `/kd-handoff-dev`
@@ -145,7 +146,7 @@ Rules for fast path:
 - Creates release ticket and archives completed dev ticket.
 
 ### 6) `/kd-release`
-- Never auto-deploy; present command and wait for user confirmation.
+- Does NOT deploy code — asks the user about deploy status, verifies releases.
 - Verifies post-deploy health/smoke checks.
 - Updates spec to `released` and creates content ticket.
 
@@ -177,8 +178,8 @@ author: agent:brainstorm|dev|qa|release|content
 ```yaml
 ---
 id: HO-XXX
-from: brainstorm|dev|qa|release
-to: dev|qa|release|content
+from: brainstorm|dev|qa|release|content
+to: dev|release|content
 priority: P0|P1|P2
 status: pending|in-progress|done|blocked
 created: YYYY-MM-DDTHH:MM:SSZ
