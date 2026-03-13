@@ -40,8 +40,8 @@ Each handoff MUST include:
 ```markdown
 ---
 id: HO-XXX
-from: brainstorm|dev|qa|release
-to: dev|qa|release|content
+from: brainstorm|dev|qa|release|content
+to: dev|release|content
 priority: P0|P1|P2
 status: pending|in-progress|done|blocked
 created: YYYY-MM-DDTHH:MM:SSZ
@@ -65,6 +65,7 @@ released_at: YYYY-MM-DDTHH:MM:SSZ (optional)
 - **task_description**: {What the receiving agent should do — complete, unambiguous}
 - **acceptance_criteria**: {What "done" looks like — testable}
 - **context_keys**: {List of `_context/` files to read}
+- **output_mode**: full_history|last_message
 
 ## Context
 What and why.
@@ -123,11 +124,13 @@ pending → in-progress → done → archived
 | Dev picks up | kd-dev | (no change) | Status: `pending` → `in-progress` |
 | Dev completes | kd-dev | (no change) | Status: `in-progress` → `done` |
 | QA picks up done ticket | kd-qa | (no change) | QA reads tickets where `to: dev` AND `status: done` |
-| QA PASS | kd-qa | (no change) | Appends QA Report with verdict PASS |
+| QA PASS / PASS-WITH-NOTES | kd-qa | (no change) | Appends QA Report with verdict PASS or PASS-WITH-NOTES |
 | QA FAIL | kd-qa | (no change) | Appends QA Report, resets `status: pending`, increments `loop_count` |
 | handoff-dev routes | kd-handoff-dev | `release` (or creates next phase ticket) | Archives completed ticket |
 | Release completes | kd-release | `content` (new ticket) | Archives release ticket |
 | Content completes | kd-content | (no change) | Archives content ticket |
+| Release deploy fails | kd-release | `dev` (new ticket) | Rollback + feedback ticket with failure details |
+| Content needs repo changes | kd-content | `dev` (new ticket) | Docs/code updates that bypass dev/QA |
 
 ### QA fail reuse rule
 On QA failure, do NOT create a new ticket. Instead:
