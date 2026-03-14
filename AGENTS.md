@@ -2,7 +2,7 @@
 
 ## Pipeline Overview
 
-`/kd-brainstorm -> /kd-handoff-spec -> /kd-dev -> /kd-qa -> /kd-handoff-dev -> /kd-release -> /kd-content`
+`/kd-brainstorm -> /kd-handoff-spec -> /kd-dev -> /kd-qa -> /kd-handoff-dev -> /kd-content`
 
 
 ## Workspace Structure
@@ -10,7 +10,7 @@
 Workspace/
 ├── _context/               # Shared context layer (symlinked across repos)
 │   ├── product-state.md    # Current product state & priorities
-│   ├── specs/              # Feature specs (draft → approved → implemented → released)
+│   ├── specs/              # Feature specs (draft → approved → implemented → archived)
 │   ├── decisions/          # Architecture & product decision records
 │   ├── research/           # Research notes & competitive analysis
 │   ├── design/             # Design docs & UX decisions
@@ -34,8 +34,7 @@ Workspace/
 | `/kd-handoff-spec` | `kd-handoff-spec` | Guardrail validation → phase decomposition → contract handoff |
 | `/kd-dev` | `kd-dev` | Pick up handoff → implement current phase → self-verify |
 | `/kd-qa` | `kd-qa` | Run checks → Progress Ledger → loop detection → route (PASS / PASS-WITH-NOTES / FAIL) |
-| `/kd-handoff-dev` | `kd-handoff-dev` | Finalize → prepare release handoff |
-| `/kd-release` | `kd-release` | Deploy → verify → content handoff |
+| `/kd-handoff-dev` | `kd-handoff-dev` | Finalize QA-passed work → prepare content handoff |
 | `/kd-content` | `kd-content` | Generate changelog, blog, docs |
 
 ## Utility Commands (Cursor Slash Commands)
@@ -43,6 +42,10 @@ Workspace/
 |---------|-------------|
 | `/kd-fix` | Bug Fix Fast Path — skip brainstorm/spec, go straight to dev |
 | `/kd-status` | Show pipeline status — scan queue, group by status/agent, flag at-risk tickets |
+| `/kd-review` | Structured diff-aware code review gate with blocking/non-blocking findings |
+| `/kd-browser-qa` | Browser QA evidence capture (screenshots/logs) for UI/web changes |
+| `/kd-ship` | Finalization hygiene checks (non-deploy) before `/kd-handoff-dev` |
+| `/kd-health` | Environment readiness checks for workflow skills and tooling |
 
 ## Core Principles
 1. **Fact-first** — Gather and verify facts before brainstorming solutions (Magentic-One Task Ledger pattern)
@@ -95,12 +98,12 @@ These rules govern how every agent operates, regardless of pipeline stage.
 
 ### Feature Pipeline (default)
 ```
-/kd-brainstorm → /kd-handoff-spec → /kd-dev → /kd-qa → /kd-handoff-dev → /kd-release → /kd-content
+/kd-brainstorm → /kd-handoff-spec → /kd-dev → /kd-qa → /kd-handoff-dev → /kd-content
 ```
 
 ### Bug Fix Fast Path
 ```
-Bug report → /kd-fix → /kd-qa → /kd-handoff-dev → /kd-release
+Bug report → /kd-fix → /kd-qa → /kd-handoff-dev → /kd-content
 ```
 - Only for clear bugs with reproducible symptoms.
 - Dev agent creates a minimal handoff ticket directly (no spec required).
@@ -112,7 +115,7 @@ Bug report → /kd-fix → /kd-qa → /kd-handoff-dev → /kd-release
 2. All agents review `_context/lessons.md` at session start for relevant patterns
 3. Work passes between agents via `_handoff/queue/` with explicit **Contract** sections
 4. Completed work moves to `_handoff/archive/`
-5. Specs follow lifecycle: `draft → approved → implemented → released → archived`
+5. Specs follow lifecycle: `draft → approved → implemented → archived`
 6. Every handoff ticket has: id, from, to, priority, status, spec, total_phases, current_phase, loop_count, output_mode
 7. Handoff contracts follow rules in `_handoff/README.md`
 
@@ -126,3 +129,6 @@ Bug report → /kd-fix → /kd-qa → /kd-handoff-dev → /kd-release
 - Define quality gates per repository in each service's local `AGENTS.md` or `PRD.md`
 - Example Python service: `ruff check`, `ruff format --check`, `mypy`, `pytest`
 - Example Node/Frontend service: `npm run lint`, `npm run build`, `npm run test`
+- Global gate policy: `kd-dev` must pass `/kd-review` before setting ticket `status: done`
+- Global gate policy: `kd-qa` uses 2-tier mode (`fast` default, `full` required before `/kd-handoff-dev`)
+- Global gate policy: `/kd-handoff-dev` requires `qa_full_gate: passed` on the ticket

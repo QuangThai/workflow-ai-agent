@@ -1,6 +1,6 @@
 # Agent-Driven Development Pipeline (Reusable Template)
 
-> A local-first, file-based workflow system that orchestrates AI agents across the full product lifecycle — from brainstorming to content generation — using shared context and structured handoffs.
+> A local-first, file-based workflow system that orchestrates AI agents across feature completion — from brainstorming to finalized content artifacts — using shared context and structured handoffs.
 
 ---
 
@@ -23,14 +23,14 @@
 
 ## Overview
 
-This workspace uses a **7-stage agent pipeline** to manage the full product development lifecycle. Each stage is implemented as an [Agent Skill](https://agentskills.io) (`.agents/skills/kd-*/SKILL.md`) with matching [Cursor slash commands](https://cursor.com/docs/agent/chat/commands) (`.cursor/commands/kd-*.md`). Skills read from a shared context layer and pass structured work items through a file-based handoff queue.
+This workspace uses a **6-stage pipeline** to manage feature completion lifecycle. Each stage is implemented as an [Agent Skill](https://agentskills.io) (`.agents/skills/kd-*/SKILL.md`) with matching [Cursor slash commands](https://cursor.com/docs/agent/chat/commands) (`.cursor/commands/kd-*.md`). Skills read from a shared context layer and pass structured work items through a file-based handoff queue.
 
 **Key design principles:**
 
 - **Local-first** — All state lives in the filesystem. No external services required.
 - **Context-sharing via symlinks** — The `_context/` folder is symlinked between the product decisions repo and the codebase, giving all agents a unified view of product state.
 - **Structured handoffs** — Work moves between agents through markdown files with YAML frontmatter in `_handoff/queue/`, ensuring nothing is lost between sessions.
-- **Human-in-the-loop** — Every critical transition (spec approval, deployment) requires explicit user confirmation.
+- **Human-in-the-loop** — Every critical transition (spec approval, finalization) requires explicit user confirmation.
 - **Cross-agent compatible** — Skills follow the open [Agent Skills standard](https://agentskills.io/specification), working across Amp, Cursor, Claude Code, Codex, and more.
 
 ---
@@ -52,11 +52,12 @@ This workspace uses a **7-stage agent pipeline** to manage the full product deve
 │                                          FAIL ◄────────┤                │
 │                                          (loop back)   │ PASS           │
 │                                                        ▼                │
-│  ┌──────────┐    ┌──────────────┐    ┌──────────────────┐              │
-│  │ CONTENT  │◄───┤   RELEASE    │◄───┤  HANDOFF-DEV     │              │
-│  │ Blog,    │    │ Deploy &     │    │  Finalize &      │              │
-│  │ Changelog│    │ Verify       │    │  Prepare Release │              │
-│  └──────────┘    └──────────────┘    └──────────────────┘              │
+│  ┌──────────┐                       ┌──────────────────┐                │
+│  │ CONTENT  │◄──────────────────────┤  HANDOFF-DEV     │                │
+│  │ Blog,    │                       │  Finalize &      │                │
+│  │ Changelog│                       │  Prepare Content │                │
+│  └──────────┘                       └──────────────────┘                │
+│                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
          ▲                    ▲                    ▲
          │                    │                    │
@@ -84,16 +85,14 @@ This workspace uses a **7-stage agent pipeline** to manage the full product deve
   QA Report (in handoff ticket)       ← qa verifies
     │
     ▼
-  _handoff/queue/HO-XXX-release.md   ← handoff-dev creates release ticket
-    │
-    ▼
-  Production deployment               ← release deploys
+  _handoff/queue/HO-XXX-content.md   ← handoff-dev creates content ticket
     │
     ▼
   _context/content/YYYY-MM-DD-slug/  ← content generates artifacts
     │
     ▼
   _handoff/archive/                   ← everything archived
+
 ```
 
 ---
@@ -107,9 +106,8 @@ This workspace uses a **7-stage agent pipeline** to manage the full product deve
 | 2   | **Approval**     | `/kd-handoff-spec` | Validate & queue for dev                    | Approved spec        | Handoff ticket in `_handoff/queue/` |
 | 3   | **Development**  | `/kd-dev`          | Implement across one or more services       | Handoff ticket       | Code changes + tests                |
 | 4   | **Quality**      | `/kd-qa`           | Run tests, lint, verify acceptance criteria | Completed dev work   | QA report (PASS/FAIL)               |
-| 5   | **Finalization** | `/kd-handoff-dev`  | Prepare release package                     | QA-passed ticket     | Release handoff ticket              |
-| 6   | **Release**      | `/kd-release`      | Deploy & verify production                  | Release ticket       | Live deployment                     |
-| 7   | **Content**      | `/kd-content`      | Generate changelog, blog, docs              | Content ticket       | Content artifacts                   |
+| 5   | **Finalization** | `/kd-handoff-dev`  | Finalize implemented work                   | QA-passed ticket     | Content handoff ticket              |
+| 6   | **Content**      | `/kd-content`      | Generate changelog, blog, docs              | Content ticket       | Content artifacts                   |
 
 ### Utility Commands
 
@@ -117,6 +115,12 @@ This workspace uses a **7-stage agent pipeline** to manage the full product deve
 |---------|-------------|
 | `/kd-fix` | Bug Fix Fast Path — skip brainstorm/spec, go straight to dev |
 | `/kd-status` | Show pipeline status — scan queue, group by status/agent, flag at-risk tickets |
+| `/kd-review` | Structured diff-aware code review gate with blocking/non-blocking findings |
+| `/kd-browser-qa` | Playwright-first browser QA evidence capture (screenshots/logs) for UI/web changes |
+| `/kd-ship` | Finalization hygiene checks (non-deploy) before `/kd-handoff-dev` |
+| `/kd-health` | Environment readiness checks for workflow skills and tooling |
+
+Note: Playwright is a project dependency in target service repos under `apps/*`; it is not installed via MCP.
 
 ---
 
@@ -209,8 +213,7 @@ The agent picks the highest-priority pending ticket and loads the appropriate sk
 /kd-handoff-spec   →  Queue it for development
 /kd-dev            →  Implement the feature
 /kd-qa             →  Verify quality
-/kd-handoff-dev    →  Finalize for release
-/kd-release        →  Deploy to production
+/kd-handoff-dev    →  Finalize and create content handoff
 /kd-content        →  Generate content artifacts
 ```
 
@@ -302,7 +305,7 @@ The `_context/` directory is the **single source of truth** shared between all a
 _context/
 ├── product-state.md              # Current priorities, active specs, quality metrics
 ├── specs/                        # Feature specifications
-│   └── SPEC-XXX-feature-name.md  #   Lifecycle: draft → approved → implemented → released → archived
+│   └── SPEC-XXX-feature-name.md  #   Lifecycle: draft → approved → implemented → archived
 ├── decisions/                    # Architecture & product decision records
 │   └── YYYY-MM-DD-decision.md    #   Immutable once recorded
 ├── research/                     # Research notes, competitive analysis
@@ -337,7 +340,7 @@ mklink /D "D:\codebase-repo\_context" "D:\Workspace\_context"
 1. **Append-only** — Documents are never deleted; they move through lifecycle states and eventually get archived.
 2. **Timestamped** — Every entry carries an ISO 8601 date for traceability.
 3. **Agent-tagged** — Every entry records which agent created or modified it (e.g., `[agent: brainstorm]`).
-4. **Status-tracked** — Specs follow a strict lifecycle: `draft → approved → implemented → released → archived`.
+4. **Status-tracked** — Specs follow a strict lifecycle: `draft → approved → implemented → archived`.
 
 ---
 
@@ -366,6 +369,9 @@ priority: P1                          # P0 (critical) | P1 (high) | P2 (normal)
 status: pending                       # pending | in-progress | done | blocked
 created: 2026-03-06T14:30            # ISO 8601 timestamp
 spec: SPEC-001                        # Reference to source spec
+review_status: pending                # pending | passed | failed
+qa_gate_mode: fast                    # fast | full
+qa_full_gate: pending                 # pending | passed | failed
 ---
 ```
 
@@ -377,8 +383,7 @@ spec: SPEC-001                        # Reference to source spec
 | `brainstorm` | `dev`     | Spec approved via `/kd-handoff-spec`                       |
 | `dev`        | `qa`      | Implementation marked done (implicit — same ticket)        |
 | `qa`         | `dev`     | QA fails — feedback loop with specific issues              |
-| `dev`        | `release` | QA passes → `/kd-handoff-dev` creates release ticket       |
-| `release`    | `content` | Deployment verified → `/kd-release` creates content ticket |
+| `dev`        | `content` | QA passes with Full Gate (`qa_full_gate: passed`) → `/kd-handoff-dev` creates content ticket |
 
 
 ---
@@ -475,44 +480,25 @@ Run comprehensive verification against the completed work. The agent will:
 
 ### Stage 5 — Finalize (`/kd-handoff-dev`)
 
-Prepare QA-passed work for release. The agent will:
+Prepare QA-passed work for completion. The agent will:
 
 1. Verify the QA report shows PASS
 2. Ensure PRD and AGENTS.md documentation is updated
 3. Update spec status from `approved` → `implemented`
-4. Create a release handoff ticket with deploy notes and rollback plan
+4. Create a content handoff ticket with implementation and QA evidence
 5. Archive the original dev handoff ticket
 
 ```
 /kd-handoff-dev
 ```
 
-**Next step:** Run `/kd-release` to deploy.
+**Next step:** Run `/kd-content` to generate completion artifacts.
 
 ---
 
-### Stage 6 — Release (`/kd-release`)
+### Stage 6 — Content (`/kd-content`)
 
-Verify release status and update product state. This agent does **NOT** deploy code — deployment happens outside this workflow (CI/CD, manual deploy, `npm publish`, etc.). The agent will:
-
-1. Pick up release tickets from `_handoff/queue/`
-2. Ask the user whether the change is live to its intended audience
-3. If not yet deployed: present readiness checklist and wait for user to deploy
-4. If live: run post-release verification (health checks, smoke tests)
-5. Update product state and archive the release ticket
-6. Create a content handoff ticket for the shipped feature
-
-```
-/kd-release
-```
-
-**Next step:** Run `/kd-content` to generate content.
-
----
-
-### Stage 7 — Content (`/kd-content`)
-
-Generate content artifacts for the shipped feature. The agent will:
+Generate content artifacts for the implemented feature. The agent will:
 
 1. Read the content handoff ticket and original spec
 2. Generate applicable content: changelog, blog post, social post, documentation updates
@@ -542,11 +528,11 @@ _context/content/2026-03-06-batch-export/
 Every feature spec passes through a strict lifecycle, tracked in its YAML frontmatter:
 
 ```
-  draft ──────► approved ──────► implemented ──────► released ──────► archived
-    │               │                 │                  │                │
-    │               │                 │                  │                │
- brainstorm    handoff-spec       handoff-dev        release           content
- creates it    approves it      code is done     deployed live     content done
+  draft ──────► approved ──────► implemented ──────► archived
+    │               │                 │                  │
+    │               │                 │                  │
+ brainstorm    handoff-spec       handoff-dev        content
+ creates it    approves it      code is done     artifacts done
 ```
 
 
@@ -554,8 +540,7 @@ Every feature spec passes through a strict lifecycle, tracked in its YAML frontm
 | ------------- | ------------------ | ------------------------------------------ |
 | `draft`       | `/kd-brainstorm`   | Spec created, under review                 |
 | `approved`    | `/kd-handoff-spec` | Spec approved, dev ticket queued           |
-| `implemented` | `/kd-handoff-dev`  | Code complete, QA passed, ready for deploy |
-| `released`    | `/kd-release`      | Live in production                         |
+| `implemented` | `/kd-handoff-dev`  | Code complete, QA passed, ready for content |
 | `archived`    | `/kd-content`      | Content generated, lifecycle complete      |
 
 
@@ -580,7 +565,7 @@ The pipeline includes a built-in feedback loop at the QA stage:
                     │                        ┌──────────┐
                     └────────────────────────┤HANDOFF-DEV│
                         (if issues found     └──────────┘
-                         during release)
+                         during QA)
 ```
 
 **QA Failure Flow:**
@@ -589,14 +574,6 @@ The pipeline includes a built-in feedback loop at the QA stage:
 2. The **existing ticket is reused** — QA appends its report, increments `loop_count`, and resets `status: pending`
 3. Dev agent picks up the same ticket on the next `/kd-dev` run and reads the appended QA feedback
 4. Cycle repeats until QA passes (escalates to user at `loop_count >= 3`)
-
-**Release Rollback Flow:**
-
-1. If post-deploy verification fails, the release ticket contains rollback instructions
-2. User executes rollback manually
-3. Issues are fed back to dev via a new handoff ticket
-
----
 
 ## Project Structure
 
@@ -623,8 +600,11 @@ Workspace/
 │       ├── kd-dev/                   #     Stage 3: Development
 │       ├── kd-qa/                    #     Stage 4: Quality Assurance
 │       ├── kd-handoff-dev/           #     Stage 5: Finalization
-│       ├── kd-release/              #     Stage 6: Release
-│       └── kd-content/              #     Stage 7: Content
+│       ├── kd-content/              #     Stage 6: Content
+│       ├── kd-review/               #     Utility: Structured review gate
+│       ├── kd-browser-qa/           #     Utility: Browser QA evidence
+│       ├── kd-ship/                 #     Utility: Finalization hygiene
+│       └── kd-health/               #     Utility: Environment health checks
 │
 ├── .cursor/                           # Cursor slash commands (plain Markdown)
 │   └── commands/                     #   Invoke via /kd-* in Cursor chat
@@ -633,10 +613,13 @@ Workspace/
 │       ├── kd-dev.md                 #     Trigger kd-dev skill
 │       ├── kd-qa.md                  #     Trigger kd-qa skill
 │       ├── kd-handoff-dev.md         #     Trigger kd-handoff-dev skill
-│       ├── kd-release.md             #     Trigger kd-release skill
 │       ├── kd-content.md             #     Trigger kd-content skill
 │       ├── kd-fix.md                 #     Bug Fix Fast Path (utility)
-│       └── kd-status.md              #     Pipeline status dashboard (utility)
+│       ├── kd-status.md              #     Pipeline status dashboard (utility)
+│       ├── kd-review.md              #     Structured code review gate (utility)
+│       ├── kd-browser-qa.md          #     Browser QA evidence capture (utility)
+│       ├── kd-ship.md                #     Finalization hygiene (utility)
+│       └── kd-health.md              #     Environment readiness checks (utility)
 │
 ├── docs/                              # Operational documentation
 │   └── deploy-project.sh            #   Project deploy script (example name)

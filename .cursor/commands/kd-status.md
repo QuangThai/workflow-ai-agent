@@ -6,11 +6,11 @@ Show the current state of the development pipeline.
    - `to: dev` + `status: pending` → Awaiting dev
    - `to: dev` + `status: in-progress` → Dev in progress
    - `to: dev` + `status: done` → Ready for QA
-   - `to: release` → Awaiting release
-   - `to: content` → Awaiting content
+   - `to: content` → Awaiting content/final completion
 4. Sort by priority (P0 > P1 > P2)
 5. Flag any ticket with `loop_count >= 2` as at-risk
-6. Scan `_context/specs/` for spec lifecycle counts (draft, approved, implemented, released, archived)
+6. Flag tickets missing finalization gates (`review_status != passed` or `qa_full_gate != passed`) as finalization-blocked
+7. Scan `_context/specs/` for spec lifecycle counts (draft, approved, implemented, archived)
 
 Present a summary like:
 

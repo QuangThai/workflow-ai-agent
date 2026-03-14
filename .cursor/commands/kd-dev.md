@@ -7,8 +7,9 @@ Load the `kd-dev` skill and follow its complete workflow.
 3. Load context: spec, research notes, `_context/lessons.md`, service AGENTS.md
 4. Implement the current phase only — do not advance phases
 5. Self-verify: lint, typecheck, and relevant tests
-6. Run the Elegance Gate for non-trivial changes
-7. Update the handoff ticket with implementation log and set `status: done`
+6. Run `/kd-review` and resolve blocking findings before completion
+7. Run the Elegance Gate for non-trivial changes
+8. Update the handoff ticket with implementation log and set `status: done`
 
 If a specific HO-ID is provided, work on that ticket directly.
 

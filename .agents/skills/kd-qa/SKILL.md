@@ -20,7 +20,7 @@ Verify completed dev work against specs, run tests, and ensure quality standards
 
 Use a two-tier QA gate to improve delivery speed without dropping safety:
 - **Fast Gate (default per dev ticket)**: lint + typecheck + impacted tests + changed-scope contract checks
-- **Full Gate (required before release)**: full regression suites for all impacted services
+- **Full Gate (required before finalization)**: full regression suites for all impacted services
 
 #### Subagent Strategy
 Scale to the number of **independent check suites**, not the number of repos:
@@ -72,6 +72,10 @@ npm run test                                 # Tests (unit + integration)
 
 #### React Audit (if React files changed)
 Load the `vercel-react-best-practices` skill and run a focused audit against changed components. Verify performance patterns, hook usage, and component structure. Add findings to the QA Report.
+
+#### Browser Evidence (if UI/web changed)
+Run `/kd-browser-qa` when UI routes/components changed. Capture screenshots and logs for happy path + critical error state.
+Store artifact paths in ticket `evidence_paths` and reference them in the QA report.
 
 ### Step 3: Manual Review Checklist
 Use change-type-driven checklists. Run the **General** checklist always, plus any applicable type-specific checklists.
@@ -153,8 +157,8 @@ Create QA report in the handoff ticket:
 ### Issues Found
 {List any issues, or "None"}
 
-### Notes for Release
-{Anything relevant for the release verification step}
+### Notes for Finalization
+{Anything relevant for `/kd-handoff-dev` and content handoff}
 
 ### Verification Commands Run
 ```bash
@@ -164,7 +168,11 @@ Create QA report in the handoff ticket:
 ### Gate Mode Evidence
 - Gate mode used: Fast / Full
 - Full Gate completed: yes/no
-- If Fast Gate only: Full Gate required before release
+- If Fast Gate only: Full Gate required before `/kd-handoff-dev`
+
+### Evidence Paths
+- {path to qa report artifacts}
+- {path to browser screenshots/logs when applicable}
 ```
 
 **Verdict definitions:**
@@ -201,7 +209,12 @@ Fill out the progress ledger:
 
 ### Step 7: Route Result
 **If PASS:**
-- Print: `✅ QA passed. Run /kd-handoff-dev to prepare for release.`
+1. Update ticket frontmatter:
+   - `qa_gate_mode: fast|full` (mode used in this run)
+   - `qa_full_gate: passed` only if mode is Full and all checks passed
+2. Print:
+   - Full mode: `✅ QA passed (Full Gate). Run /kd-handoff-dev to finalize work.`
+   - Fast mode: `✅ QA passed (Fast Gate). Full Gate still required before /kd-handoff-dev.`
 
 **If FAIL:**
 - **Reuse the existing ticket** — do NOT create a new one:
@@ -223,4 +236,5 @@ Fill out the progress ledger:
 - Be thorough but fair — only flag real issues
 - Provide evidence for every fail
 - Update `_context/metrics/` with quality data
+- For UI/web changes, include browser QA evidence in `evidence_paths` before PASS
 - **Write to `_context/lessons.md`** when: (a) the same failure pattern recurs across multiple specs, (b) a QA check reveals a gap in the pipeline, or (c) `loop_count >= 2` exposes a systemic issue. Do not log routine pass/fail results.

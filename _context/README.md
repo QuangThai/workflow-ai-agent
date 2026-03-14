@@ -31,4 +31,4 @@ _context/
 1. **Append-only** — never delete context files, only update status (e.g., `draft → approved → archived`)
 2. **Timestamped** — every entry has ISO date
 3. **Agent-tagged** — every entry has `[agent: brainstorm|dev|qa|release|content]` tag
-4. **Status-tracked** — specs follow lifecycle: `draft → approved → implemented → released → archived`
+4. **Status-tracked** — specs follow lifecycle: `draft → approved → implemented → archived`

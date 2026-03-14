@@ -1,13 +1,13 @@
 ---
 name: kd-content
-description: "Create publication-ready release content from shipped features — changelog, release notes, blog post, social posts (X/LinkedIn/Discord), API docs, engineering post, email announcement. Use after release to generate diverse, evidence-backed content. Triggers on: content, changelog, blog post, social post, release notes, write about, announce."
+description: "Create publication-ready content from completed features — changelog, release notes, blog post, social posts (X/LinkedIn/Discord), API docs, engineering post, email announcement. Use after finalization to generate diverse, evidence-backed content. Triggers on: content, changelog, blog post, social post, release notes, write about, announce."
 ---
 
-# kd-content — Release Content Agent
+# kd-content — Completion Content Agent
 
-Generate high-quality, diverse content artifacts from features that are already shipped and released.
+Generate high-quality, diverse content artifacts from features that are implemented, QA-verified, and finalized.
 
-This is the final pipeline stage. Your job is not to summarize specs or plans — it is to turn **released, shipped work** into accurate, useful, audience-specific content grounded in real implementation evidence.
+This is the final pipeline stage. Your job is not to summarize specs or plans — it is to turn completed, QA-verified work into accurate, useful, audience-specific content grounded in implementation evidence.
 
 ## Core Principle
 
@@ -21,16 +21,16 @@ STOP and report if any of the following are true:
 
 - No pending content ticket exists in `_handoff/queue/`
 - The referenced spec is missing
-- The feature is not actually shipped/released (spec status must be `released`)
-- QA/release evidence is missing for claims you would need to make
+- The feature is not actually implemented/finalized (spec status must be `implemented`)
+- QA/finalization evidence is missing for claims you would need to make
 - You only have a plan/design, not a shipped capability
 
 **Banned phrases in content artifacts** (indicates unshipped work):
 - "planned", "queued for dev", "pending implementation", "future support", "will be", "coming soon"
 - Exception: an explicit "What's Next" section may reference planned follow-ups if the source confirms them
 
-If the feature is not released, STOP and report:
-`❌ Content stage requires shipped evidence. Current inputs describe planned work, not a released feature.`
+If the feature is not implemented/finalized, STOP and report:
+`❌ Content stage requires implementation evidence. Current inputs describe planned work, not completed work.`
 
 ---
 
@@ -40,14 +40,14 @@ If the feature is not released, STOP and report:
 1. List `_handoff/queue/` for tickets where `to: content` and `status: pending`
 2. Read the content handoff ticket
 3. Update ticket `status: pending` → `status: in-progress`
-4. Read the referenced spec — confirm `status: released`
-5. **Fail-fast**: If no pending content tickets found, STOP. If spec missing or not released, STOP.
+4. Read the referenced spec — confirm `status: implemented`
+5. **Fail-fast**: If no pending content tickets found, STOP. If spec missing or status is earlier than implemented, STOP.
 
-### Step 2: Gather Release Evidence
+### Step 2: Gather Completion Evidence
 Read the smallest set of artifacts needed to write accurate content:
 
 - Spec (full — problem, solution, technical approach, acceptance criteria, phases)
-- Release handoff ticket (what was deployed, QA status, deploy notes)
+- Finalization handoff ticket (what was completed, QA status, notes)
 - QA report (what was verified, test results)
 - `_context/product-state.md` (product positioning, active features)
 - `_context/lessons.md` (relevant lessons for engineering post)
@@ -56,7 +56,7 @@ Read the smallest set of artifacts needed to write accurate content:
 - Archived phase tickets from `_handoff/archive/` (for multi-phase features)
 
 **Before drafting, you must be able to answer all 7 questions:**
-1. What exactly shipped? (capabilities, not plans)
+1. What exactly was completed? (capabilities, not plans)
 2. Who is it for? (primary and secondary audience)
 3. What problem existed before? (concrete pain, not abstract)
 4. What is different now? (before vs. after)
@@ -66,13 +66,13 @@ Read the smallest set of artifacts needed to write accurate content:
 
 If you cannot answer questions 1–4 with concrete facts, STOP — the evidence is insufficient.
 
-### Step 3: Build the Release Brief
+### Step 3: Build the Completion Brief
 Create `release-brief.md` as the **single source of truth** for all downstream content. Every artifact draws from this brief — not directly from the spec.
 
 ```markdown
 [agent: content]
 
-# Release Brief — {Feature Title}
+# Completion Brief — {Feature Title}
 
 ## One-Line Summary
 {One sentence: what shipped and for whom}
@@ -101,7 +101,7 @@ Create `release-brief.md` as the **single source of truth** for all downstream c
 - **QA evidence**: {test results, acceptance criteria met}
 - **Measured outcomes**: {latency, error rate, performance — only if measured}
 - **Reliability/security validation**: {what was verified}
-- **References**: {file paths, QA reports, deploy logs}
+- **References**: {file paths, QA reports, finalization logs}
 
 ## Implementation Facts
 - **APIs/endpoints added or changed**: {list}
@@ -293,14 +293,15 @@ Content changes must not bypass the dev/QA pipeline.
 ### Step 9: Archive & Complete
 1. Update ticket `status: in-progress` → `status: done`
 2. Move content handoff to `_handoff/archive/`
-3. Update spec status: `released` → `archived`
-4. Update `_context/product-state.md` — find the release line added by kd-release (ending with `(content pending)`) and replace with `(content generated)`. Do NOT modify Active Specs (that's kd-release's responsibility).
+3. Update spec status: `implemented` -> `archived`
+4. Update `_context/product-state.md` — add a deterministic line in Recent Decisions:
+   - `**{YYYY-MM-DD}** [SPEC-XXX] Content generated for implemented feature.`
 
 ```
 📝 Content generated for: {title}
 📁 Output: _context/content/{slug}/
 📊 Quality review: _context/content/{slug}/content-review.md
-✅ Pipeline complete: brainstorm → handoff-spec → dev → qa → handoff-dev → release → content
+✅ Pipeline complete: brainstorm → handoff-spec → dev → qa → handoff-dev → content
 ```
 
 ---

@@ -4,7 +4,7 @@ This workspace uses a file-based, local-first pipeline with shared context, stru
 
 ## Pipeline
 
-`/kd-brainstorm -> /kd-handoff-spec -> /kd-dev -> /kd-qa -> /kd-handoff-dev -> /kd-release -> /kd-content`
+`/kd-brainstorm -> /kd-handoff-spec -> /kd-dev -> /kd-qa -> /kd-handoff-dev -> /kd-content`
 
 ## Source of Truth
 
@@ -71,13 +71,13 @@ These rules apply to ALL agents at ALL times, regardless of pipeline stage.
 ### Feature Pipeline (default)
 Full pipeline for new features, improvements, and non-trivial changes:
 ```
-/kd-brainstorm → /kd-handoff-spec → /kd-dev → /kd-qa → /kd-handoff-dev → /kd-release → /kd-content
+/kd-brainstorm → /kd-handoff-spec → /kd-dev → /kd-qa → /kd-handoff-dev → /kd-content
 ```
 
 ### Bug Fix Fast Path
 For bug reports and failing tests — skip brainstorm and spec, go straight to fix:
 ```
-Bug report → /kd-fix → /kd-qa → /kd-handoff-dev → /kd-release
+Bug report → /kd-fix → /kd-qa → /kd-handoff-dev → /kd-content
 ```
 Rules for fast path:
 - Only for clear bugs with reproducible symptoms (failing tests, error logs, user-reported defects).
@@ -90,6 +90,10 @@ Rules for fast path:
 |---------|-------------|
 | `/kd-fix` | Bug Fix Fast Path — skip brainstorm/spec, go straight to dev |
 | `/kd-status` | Show pipeline status — scan queue, group by status/agent, flag at-risk tickets |
+| `/kd-review` | Structured diff-aware code review gate with blocking/non-blocking findings |
+| `/kd-browser-qa` | Browser QA evidence capture (screenshots/logs) for UI/web changes |
+| `/kd-ship` | Finalization hygiene checks (non-deploy) before `/kd-handoff-dev` |
+| `/kd-health` | Environment readiness checks for workflow skills and tooling |
 
 ---
 
@@ -130,6 +134,7 @@ Rules for fast path:
 - Implements the **current phase only** (from `current_phase` in frontmatter).
 - If `loop_count > 0`: Must address the specific `instruction_or_question` from the QA Progress Ledger.
 - Before marking done: self-review — *"Would a staff engineer approve this? Is there a more elegant way?"*
+- Must run `/kd-review` and resolve blocking findings before setting ticket `status: done`.
 - Updates ticket status, phase tracking, and implementation log.
 
 ### 4) `/kd-qa`
@@ -142,15 +147,11 @@ Rules for fast path:
 
 ### 5) `/kd-handoff-dev`
 - Requires QA PASS.
+- Requires `qa_full_gate: passed` on the handoff ticket.
 - Updates spec to `implemented`.
-- Creates release ticket and archives completed dev ticket.
+- Creates content ticket and archives completed dev ticket.
 
-### 6) `/kd-release`
-- Does NOT deploy code — asks the user about deploy status, verifies releases.
-- Verifies post-deploy health/smoke checks.
-- Updates spec to `released` and creates content ticket.
-
-### 7) `/kd-content`
+### 6) `/kd-content`
 - Generates changelog/blog/social/docs artifacts.
 - Saves artifacts to `_context/content/YYYY-MM-DD-{slug}/`.
 - Archives content ticket and marks spec `archived`.
@@ -165,11 +166,11 @@ Rules for fast path:
 ---
 id: SPEC-XXX
 title: Feature Title
-status: draft|approved|implemented|released|archived
+status: draft|approved|implemented|archived
 priority: P0|P1|P2
 effort: S|M|L
 created: YYYY-MM-DD
-author: agent:brainstorm|dev|qa|release|content
+author: agent:brainstorm|dev|qa|content
 ---
 ```
 
@@ -178,8 +179,8 @@ author: agent:brainstorm|dev|qa|release|content
 ```yaml
 ---
 id: HO-XXX
-from: brainstorm|dev|qa|release|content
-to: dev|release|content
+from: brainstorm|dev|qa|content
+to: dev|content
 priority: P0|P1|P2
 status: pending|in-progress|done|blocked
 created: YYYY-MM-DDTHH:MM:SSZ
@@ -196,3 +197,4 @@ output_mode: full_history|last_message
 - Define quality gates per service/repository in local `AGENTS.md` or `PRD.md`
 - Example Python service: `ruff check`, `ruff format --check`, `mypy`, `pytest`
 - Example Node/Web service: `npm run lint`, `npm run build`, `npm run test`
+- Global gate policy: 2-tier QA (`fast` default, `full` required before `/kd-handoff-dev`)

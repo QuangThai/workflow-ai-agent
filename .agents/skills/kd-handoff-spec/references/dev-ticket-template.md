@@ -19,6 +19,11 @@ service_scope: {list of affected services/repos}
 risk_level: {low|medium|high — from spec}
 rollback_plan: {short rollback strategy — from spec}
 output_mode: full_history
+review_status: pending
+qa_gate_mode: fast
+qa_full_gate: pending
+review_findings_summary: ""
+evidence_paths: []
 ---
 
 # {Spec Title}

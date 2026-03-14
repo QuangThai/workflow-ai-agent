@@ -34,6 +34,9 @@ total_phases: 1
 current_phase: 1
 loop_count: 0
 output_mode: full_history
+review_status: pending
+qa_gate_mode: fast
+qa_full_gate: pending
 ---
 
 # Bugfix: {Brief Description}
@@ -192,7 +195,19 @@ Before marking done, pause and self-review:
 3. If the fix feels hacky: re-implement the clean solution — but scope this to the current change. Don't refactor unrelated code.
 4. Skip this for simple fixes (single-line changes, config updates, QA loop fixes addressing specific feedback).
 
-### Step 6: Update Handoff
+### Step 6: Review Gate (Required Before Done)
+Run `/kd-review` on your diff before marking the ticket done.
+
+Required behavior:
+1. Add or update `review_status` in ticket frontmatter:
+   - `pending` before review
+   - `passed` only when there are no blocking findings
+   - `failed` if blocking findings remain
+2. Save a short review summary in `review_findings_summary` (blocking/non-blocking count + categories).
+3. If there are blocking findings (`critical` or `high`), fix them first and re-run `/kd-review`.
+4. Do not set `status: done` while `review_status != passed`.
+
+### Step 7: Update Handoff
 Update the handoff ticket: `status: pending` → `status: done`
 
 Add the implementation log to the ticket:
@@ -245,9 +260,13 @@ Add the implementation log to the ticket:
 
 ### Spec Deviations
 - {any differences discovered between spec and reality — or "None"}
+
+### Review Gate
+- Review status: passed
+- Findings summary: {blocking/non-blocking counts by severity}
 ```
 
-### Step 7: Complete
+### Step 8: Complete
 
 **If implementation succeeded:**
 ```
@@ -284,6 +303,7 @@ Save all progress made so far, then:
 - **Follow existing patterns** — don't introduce new libraries without checking the project uses them
 - **Write tests** for new functionality — tests alongside code, not as an afterthought
 - **Never skip checks** — always run lint/types/tests before marking done
+- **Never skip review gate** — `/kd-review` must pass before `status: done`
 - **Save progress when blocked** — never discard partial work. Update the ticket with what's done and what's stuck
 - **Self-solve implementation, ask on product** — figure out code patterns yourself, but ask the user when product behavior is ambiguous
 - **Write to `_context/lessons.md`** when: (a) you discover a non-obvious root cause during debugging, (b) a QA loop reveals a recurring pattern, or (c) you find an undocumented codebase convention

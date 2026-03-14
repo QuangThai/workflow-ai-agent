@@ -19,7 +19,7 @@
 <!-- Auto-appended by kd-handoff-spec -->
 
 ## Active Specs
-<!-- Auto-appended by kd-handoff-spec, removed by kd-release -->
+<!-- Auto-appended by kd-handoff-spec, cleared when work is finalized -->
 
 ## Quality Metrics
 <!-- Updated by kd-qa -->
